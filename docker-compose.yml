@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./chroma_db:/app/chroma_db
+      - ./ringed-index.json:/app/ringed-index.json
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/ringed-index.json

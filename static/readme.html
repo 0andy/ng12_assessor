@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NG12 - Readme</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f4f5f7; color: #1a1a1a; min-height: 100vh; }
+    header { background: linear-gradient(135deg, #1e40af, #2563eb); color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 56px; }
+    header h1 { font-size: 18px; font-weight: 600; }
+    .header-links { display: flex; gap: 10px; }
+    .header-links a { color: #fff; font-size: 13px; font-weight: 500; text-decoration: none; padding: 6px 16px; border: 1px solid rgba(255,255,255,0.4); border-radius: 6px; transition: all .15s; }
+    .header-links a:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.7); }
+
+    .content { max-width: 900px; margin: 0 auto; padding: 32px 24px 48px; }
+    .content h2 { font-size: 28px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
+    .content .subtitle { font-size: 15px; color: #64748b; margin-bottom: 28px; }
+
+    .section { margin-bottom: 28px; }
+    .section h3 { font-size: 17px; font-weight: 600; color: #1e293b; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
+    .section p { font-size: 14px; line-height: 1.7; color: #475569; margin-bottom: 10px; }
+
+    .code-block { background: #1e293b; color: #e2e8f0; border-radius: 8px; padding: 14px 18px; font-family: "SF Mono", "Fira Code", monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; margin-bottom: 12px; }
+    .code-block .comment { color: #64748b; }
+    .code-block .cmd { color: #93c5fd; }
+
+    .tech-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .tech-item { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; }
+    .tech-item .tech-name { font-size: 14px; font-weight: 600; color: #1e293b; }
+    .tech-item .tech-desc { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+    .tree { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 20px; font-family: "SF Mono", "Fira Code", monospace; font-size: 13px; line-height: 1.8; color: #475569; overflow-x: auto; white-space: pre; }
+    .tree .folder { color: #1e40af; font-weight: 600; }
+    .tree .file { color: #475569; }
+    .tree .desc { color: #94a3b8; font-style: italic; }
+
+    .api-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; font-size: 13px; margin-bottom: 12px; }
+    .api-table th { background: #f8fafc; text-align: left; padding: 10px 14px; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; }
+    .api-table td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+    .api-table tr:last-child td { border-bottom: none; }
+    .api-table code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 12px; color: #1e40af; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+    .badge-get { background: #dcfce7; color: #166534; }
+    .badge-post { background: #dbeafe; color: #1e40af; }
+    .badge-delete { background: #fee2e2; color: #991b1b; }
+
+    @media (max-width: 640px) {
+      .tech-grid { grid-template-columns: 1fr; }
+      .content { padding: 20px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>NG12 Assessor - Readme</h1>
+    <div class="header-links">
+      <a href="index.html">&larr; Back to App</a>
+      <a href="architecture.html" target="_blank">Architecture</a>
+      <a href="gallery.html" target="_blank">Gallery</a>
+      <a href="notes.html" target="_blank">Notes</a>
+    </div>
+  </header>
+
+  <div class="content">
+    <h2>NG12 Cancer Risk Assessor</h2>
+    <p class="subtitle">A clinical decision support system that uses RAG to assess cancer risk based on NICE NG12 guidelines.</p>
+
+    <!-- Overview -->
+    <div class="section">
+      <h3>Overview</h3>
+      <p>
+        This application ingests the NICE NG12 PDF (Suspected Cancer: Recognition and Referral), parses it into structured chunks,
+        stores them in ChromaDB vector collections, and provides two AI-powered interfaces:
+      </p>
+      <p>
+        <strong>Part 1 &mdash; Patient Assessment:</strong> Given a patient's clinical data (age, symptoms, smoking history, gender),
+        the system retrieves relevant guideline passages and uses Gemini 2.0 Flash to assess cancer risk, producing structured
+        recommendations with citations.
+      </p>
+      <p>
+        <strong>Part 2 &mdash; Conversational Chat:</strong> A multi-turn Q&amp;A interface where clinicians can ask questions
+        about NG12 guidelines. Features dual guardrails (input classification + output quality assessment),
+        context-aware follow-up handling, and grounded answers with citations.
+      </p>
+    </div>
+
+    <!-- Tech Stack -->
+    <div class="section">
+      <h3>Tech Stack</h3>
+      <div class="tech-grid">
+        <div class="tech-item"><div class="tech-name">FastAPI</div><div class="tech-desc">Backend framework with async support</div></div>
+        <div class="tech-item"><div class="tech-name">LangGraph</div><div class="tech-desc">Workflow orchestration (state machines)</div></div>
+        <div class="tech-item"><div class="tech-name">ChromaDB</div><div class="tech-desc">Vector database (2 collections)</div></div>
+        <div class="tech-item"><div class="tech-name">Vertex AI</div><div class="tech-desc">text-embedding-004 for embeddings</div></div>
+        <div class="tech-item"><div class="tech-name">Gemini 2.0 Flash</div><div class="tech-desc">LLM for reasoning &amp; assessment</div></div>
+        <div class="tech-item"><div class="tech-name">PyMuPDF</div><div class="tech-desc">PDF parsing &amp; text extraction</div></div>
+      </div>
+    </div>
+
+    <!-- Quick Start -->
+    <div class="section">
+      <h3>Quick Start</h3>
+      <p><strong>1. Configure credentials</strong></p>
+      <div class="code-block">
+<span class="cmd">cp</span> .env.example .env
+<span class="comment"># Edit .env and set:</span>
+GOOGLE_APPLICATION_CREDENTIALS=your-credentials.json
+      </div>
+      <p><strong>2a. Run with Docker (recommended)</strong></p>
+      <div class="code-block">
+<span class="cmd">docker compose up</span> --build
+      </div>
+      <p><strong>2b. Run locally</strong></p>
+      <div class="code-block">
+<span class="cmd">pip install</span> -r requirements.txt
+<span class="cmd">python</span> -m uvicorn app.main:app --port 8000
+      </div>
+      <p>Then open <strong>http://localhost:8000</strong></p>
+    </div>
+
+    <!-- API Endpoints -->
+    <div class="section">
+      <h3>API Endpoints</h3>
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge-get">GET</span></td><td><code>/assess/patients</code></td><td>List all test patients for quick-select</td></tr>
+          <tr><td><span class="badge badge-post">POST</span></td><td><code>/assess/{patient_id}</code></td><td>Run clinical risk assessment for a patient</td></tr>
+          <tr><td><span class="badge badge-post">POST</span></td><td><code>/chat</code></td><td>Send a chat message (session_id, message)</td></tr>
+          <tr><td><span class="badge badge-get">GET</span></td><td><code>/chat/history/{session_id}</code></td><td>Retrieve conversation history</td></tr>
+          <tr><td><span class="badge badge-delete">DELETE</span></td><td><code>/chat/history/{session_id}</code></td><td>Clear conversation history</td></tr>
+          <tr><td><span class="badge badge-get">GET</span></td><td><code>/admin/stats</code></td><td>ChromaDB collection statistics</td></tr>
+          <tr><td><span class="badge badge-get">GET</span></td><td><code>/admin/chunks</code></td><td>Browse chunks with filters &amp; pagination</td></tr>
+          <tr><td><span class="badge badge-post">POST</span></td><td><code>/admin/refresh</code></td><td>Re-ingest PDF and rebuild collections</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Project Structure -->
+    <div class="section">
+      <h3>Project Structure</h3>
+      <div class="tree">
+ng12_assessor/
+<span class="folder">  app/</span>
+    main.py                         <span class="desc"># FastAPI entry point</span>
+    config.py                       <span class="desc"># Environment config</span>
+<span class="folder">    agents/</span>
+      assessment_workflow.py        <span class="desc"># Part 1: LangGraph assessment (4 nodes)</span>
+      chat_workflow.py              <span class="desc"># Part 2: LangGraph chat (12 nodes)</span>
+<span class="folder">    core/</span>
+      rag_pipeline.py               <span class="desc"># RAG retrieval + reranking</span>
+      vector_store.py               <span class="desc"># ChromaDB wrapper (2 collections)</span>
+      embeddings.py                 <span class="desc"># Vertex AI embedding client</span>
+      gemini_client.py              <span class="desc"># Gemini 2.0 Flash client</span>
+      query_builder.py              <span class="desc"># A+C+B tiered query strategy</span>
+      patient_db.py                 <span class="desc"># Test patient data loader</span>
+<span class="folder">    ingestion/</span>
+      chunker.py                    <span class="desc"># PDF parser &amp; state machine chunker</span>
+<span class="folder">    prompts/</span>
+      assessment.py                 <span class="desc"># Part 1 prompts &amp; formatting</span>
+      chat.py                       <span class="desc"># Part 2 prompts, guardrails, citations</span>
+<span class="folder">    routers/</span>
+      assess.py                     <span class="desc"># /assess/* endpoints</span>
+      chat.py                       <span class="desc"># /chat/* endpoints</span>
+      admin.py                      <span class="desc"># /admin/* endpoints</span>
+<span class="folder">    memory/</span>
+      session_store.py              <span class="desc"># In-memory session &amp; topic store</span>
+<span class="folder">  static/</span>
+    index.html                      <span class="desc"># Main app (3 tabs)</span>
+    architecture.html               <span class="desc"># Architecture diagrams</span>
+    gallery.html                    <span class="desc"># Diagram gallery</span>
+    notes.html                      <span class="desc"># Design notes</span>
+    readme.html                     <span class="desc"># This page</span>
+<span class="folder">    image/</span>                          <span class="desc"># Architecture diagram images</span>
+<span class="folder">  data/</span>
+    patients.json                   <span class="desc"># 10 test patient records</span>
+      </div>
+    </div>
+
+    <!-- Prompt Files -->
+    <div class="section">
+      <h3>Prompt Files</h3>
+      <p>
+        <strong>app/prompts/assessment.py</strong> &mdash; Part 1: Clinical Decision Support prompts.
+        Contains the system and user prompts used by the assessment workflow (<code>/assess/{patient_id}</code>)
+        to instruct Gemini on how to evaluate patient data against NG12 guideline passages and return structured JSON results.
+      </p>
+      <p>
+        <strong>app/prompts/chat.py</strong> &mdash; Part 2: Conversational Chat prompts.
+        Contains the system and user prompts for the chat workflow (<code>/chat</code>),
+        including query rewriting, qualification, refusal templates, and citation formatting helpers.
+      </p>
+    </div>
+
+    <!-- ChromaDB Collections -->
+    <div class="section">
+      <h3>ChromaDB Collections</h3>
+      <table class="api-table">
+        <thead><tr><th>Collection</th><th>Contents</th><th>Purpose</th><th>Query Method</th></tr></thead>
+        <tbody>
+          <tr><td><code>ng12_canonical</code></td><td>rule_canonical</td><td>Verbatim PDF text for citation display</td><td>ID-based lookup</td></tr>
+          <tr><td><code>ng12_guidelines</code></td><td>rule_search</td><td>Template-enriched text with synonym expansion for better vector retrieval</td><td>Vector similarity (filtered by doc_type=rule_search)</td></tr>
+          <tr><td><code>ng12_guidelines</code></td><td>symptom_index</td><td>Symptom-to-cancer mapping with cross-references back to Part A rules</td><td>Vector similarity (filtered by doc_type=symptom_index)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</body>
+</html>

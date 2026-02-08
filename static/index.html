@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NG12 Cancer Risk Assessor</title>
+  <style>
+    /* -- Reset & Base --------------------------------------------------- */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f4f5f7; color: #1a1a1a; min-height: 100vh; }
+
+    /* -- Header --------------------------------------------------------- */
+    header { background: linear-gradient(135deg, #1e40af, #2563eb); color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 56px; }
+    header h1 { font-size: 18px; font-weight: 600; }
+    .header-links { display: flex; gap: 10px; }
+    .header-links a { color: #fff; font-size: 13px; font-weight: 500; text-decoration: none; padding: 6px 16px; border: 1px solid rgba(255,255,255,0.4); border-radius: 6px; transition: all .15s; }
+    .header-links a:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.7); }
+
+    /* -- Tabs ----------------------------------------------------------- */
+    .tabs { display: flex; background: #fff; border-bottom: 1px solid #e2e8f0; }
+    .tab-btn { flex: 1; padding: 14px; text-align: center; cursor: pointer; font-size: 15px; font-weight: 600; color: #475569; border: none; background: none; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; }
+    .tab-btn:hover { color: #1e293b; }
+    .tab-btn.active { color: #1e40af; border-bottom-color: #1e40af; }
+
+    /* -- Content Container ---------------------------------------------- */
+    .container { max-width: 800px; margin: 0 auto; padding: 24px 16px; }
+    .container.wide { max-width: 1200px; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* -- Assessment Tab ------------------------------------------------- */
+    .input-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    .input-row input { flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+    .input-row button { padding: 10px 20px; background: #1e40af; color: #fff; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; white-space: nowrap; transition: background .15s; }
+    .input-row button:hover { background: #1e3a8a; }
+    .input-row button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* Patient quick-select buttons */
+    .patient-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+    .patient-buttons .pbtn { padding: 6px 12px; background: #e2e8f0; border: 1px solid #cbd5e1; border-radius: 16px; font-size: 12px; cursor: pointer; color: #334155; transition: all .15s; }
+    .patient-buttons .pbtn:hover { background: #1e40af; color: #fff; border-color: #1e40af; }
+
+    /* Result cards */
+    .result-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .result-card h3 { font-size: 14px; font-weight: 600; color: #475569; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Patient info */
+    .patient-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; }
+    .patient-grid .field-label { font-size: 12px; color: #94a3b8; }
+    .patient-grid .field-value { font-size: 14px; font-weight: 500; }
+
+    /* Risk level display */
+    .risk-badge { display: inline-block; padding: 6px 16px; border-radius: 6px; font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+    .risk-urgent-referral { background: #dc2626; color: #fff; }
+    .risk-urgent-investigation { background: #ea580c; color: #fff; }
+    .risk-consider { background: #ca8a04; color: #1a1a1a; }
+    .risk-no-criteria { background: #16a34a; color: #fff; }
+    .risk-demo { background: #6b7280; color: #fff; }
+
+    .assess-field { margin-bottom: 8px; }
+    .assess-field .af-label { font-size: 12px; color: #94a3b8; margin-bottom: 2px; }
+    .assess-field .af-value { font-size: 14px; line-height: 1.5; }
+
+    /* Matched recommendations list */
+    .match-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; margin-bottom: 6px; }
+    .match-item .mi-section { font-weight: 600; color: #1e40af; margin-right: 8px; }
+    .match-item .mi-action { font-size: 12px; }
+    .match-item .mi-criteria { font-size: 13px; margin-top: 4px; color: #334155; }
+    .match-item .mi-guideline { font-size: 12px; margin-top: 4px; color: #64748b; font-style: italic; }
+
+    /* Citations (shared between assessment and chat) */
+    .citation-item { border-bottom: 1px solid #f1f5f9; padding: 8px 0; cursor: pointer; }
+    .citation-item:last-child { border-bottom: none; }
+    .citation-header { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    .citation-header .ci-ref { font-weight: 600; color: #1e40af; }
+    .citation-header .ci-chunk { font-family: monospace; font-size: 11px; color: #94a3b8; }
+    .citation-header .ci-toggle { margin-left: auto; color: #94a3b8; font-size: 11px; }
+    .citation-excerpt { display: none; margin-top: 6px; padding: 8px; background: #f8fafc; border-radius: 4px; font-size: 12px; line-height: 1.5; color: #475569; }
+    .citation-excerpt.open { display: block; }
+
+    /* Symptom tags */
+    .symptom-tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; background: #dbeafe; color: #1e40af; margin: 2px; }
+
+    /* Raw JSON toggle */
+    .raw-toggle { background: none; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 14px; font-size: 12px; cursor: pointer; color: #64748b; margin-bottom: 8px; }
+    .raw-toggle:hover { background: #f1f5f9; }
+    .raw-json { display: none; background: #1e293b; color: #e2e8f0; border-radius: 6px; padding: 12px; font-family: "SF Mono", "Fira Code", monospace; font-size: 12px; line-height: 1.5; overflow-x: auto; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+    .raw-json.open { display: block; }
+
+    /* Loading spinner */
+    .loading-indicator { display: flex; align-items: center; gap: 10px; padding: 20px; color: #64748b; font-size: 14px; }
+    .spinner { width: 20px; height: 20px; border: 2px solid #e2e8f0; border-top-color: #1e40af; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error card */
+    .error-card { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; color: #991b1b; }
+
+    /* -- Status --------------------------------------------------------- */
+    .status { color: #64748b; font-size: 13px; padding: 8px 0; }
+
+    /* -- Chat Tab ------------------------------------------------------- */
+    .chat-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .chat-toolbar .new-chat-btn { padding: 6px 14px; background: #334155; color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; transition: background .15s; }
+    .chat-toolbar .new-chat-btn:hover { background: #475569; }
+    .chat-session-id { font-size: 11px; color: #94a3b8; font-family: monospace; }
+
+    #chat-messages {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+      padding: 16px; height: 420px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.5; word-wrap: break-word; white-space: pre-wrap; }
+    .msg.user { align-self: flex-end; background: #2563eb; color: #fff; border-bottom-right-radius: 4px; }
+    .msg.assistant { align-self: flex-start; background: #f3f4f6; color: #1a1a1a; border-bottom-left-radius: 4px; }
+    .msg.assistant.guardrail-warn { background: #fef9c3; }
+    .msg.assistant.guardrail-weak { background: #fff7ed; }
+    .msg.assistant.msg-error { background: #fef2f2; color: #991b1b; }
+    .msg.thinking { opacity: 0.6; }
+
+    /* Chat citation tags */
+    .chat-citations { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+    .chat-cite-tag { display: inline-block; padding: 2px 8px; background: #e0f2fe; color: #1e40af; border-radius: 10px; font-size: 11px; cursor: pointer; transition: background .15s; user-select: none; }
+    .chat-cite-tag:hover { background: #bae6fd; }
+    .chat-cite-excerpt { display: none; margin-top: 4px; padding: 6px 8px; background: #f8fafc; border-radius: 4px; font-size: 11px; line-height: 1.4; color: #64748b; white-space: normal; }
+    .chat-cite-excerpt.open { display: block; }
+
+    /* Chat debug info */
+    .chat-debug { margin-top: 8px; }
+    .chat-debug-toggle { background: none; border: none; color: #94a3b8; font-size: 12px; cursor: pointer; padding: 4px 0; }
+    .chat-debug-toggle:hover { color: #64748b; }
+    .chat-debug-content { display: none; padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-top: 4px; font-size: 12px; color: #64748b; line-height: 1.6; }
+    .chat-debug-content.open { display: block; }
+    .chat-debug-content .debug-row { display: block; margin-bottom: 2px; }
+    .chat-debug-content .debug-label { font-weight: 600; color: #475569; }
+
+    /* Chat input area */
+    .chat-input-area { margin-top: 12px; }
+    .chat-input-row { display: flex; gap: 8px; align-items: flex-end; }
+    .chat-input-row textarea {
+      flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px;
+      font-size: 14px; font-family: inherit; resize: vertical;
+      min-height: 44px; max-height: 200px; line-height: 1.4;
+    }
+    .chat-input-row button { padding: 10px 20px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; transition: background .15s; white-space: nowrap; }
+    .chat-input-row button:hover { background: #1d4ed8; }
+    .chat-input-row button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* -- Admin Tab (unchanged) ------------------------------------------ */
+    .admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .admin-header h2 { font-size: 20px; font-weight: 600; color: #1e293b; }
+    #reindex-btn { background: #334155; color: #e2e8f0; border: 1px solid #475569; border-radius: 6px; padding: 8px 16px; cursor: pointer; font-size: 13px; }
+    #reindex-btn:hover { background: #475569; }
+    #reindex-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* Stat cards */
+    .stat-cards { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+    .stat-card { flex: 1; min-width: 140px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; text-align: center; }
+    .stat-card .stat-value { font-size: 28px; font-weight: 700; color: #1e40af; }
+    .stat-card .stat-label { font-size: 12px; color: #64748b; margin-top: 4px; }
+
+    /* Filters */
+    .filters-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+    .filters-row select, .filters-row input { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: #fff; }
+    .filters-row select { min-width: 180px; }
+    .filters-row input { flex: 1; min-width: 160px; }
+    .filters-row button { padding: 8px 16px; background: #1e40af; color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+    .filters-row button:hover { background: #1e3a8a; }
+
+    /* Chunks table */
+    .chunks-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; font-size: 13px; }
+    .chunks-table th { background: #f8fafc; text-align: left; padding: 10px 12px; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+    .chunks-table td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+    .chunks-table tr:nth-child(even) td { background: #fafbfc; }
+    .chunks-table tr:hover td { background: #f0f4ff; }
+    .chunks-table tr { cursor: pointer; }
+
+    /* Action type badges */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .badge-urgent-referral { background: #fee2e2; color: #991b1b; }
+    .badge-urgent-investigation { background: #ffedd5; color: #9a3412; }
+    .badge-consider { background: #fef9c3; color: #854d0e; }
+    .badge-safety-net { background: #dcfce7; color: #166534; }
+    .badge-do-not { background: #fce7f3; color: #9d174d; }
+    .badge-other { background: #f1f5f9; color: #475569; }
+
+    /* Text preview */
+    .text-preview { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: help; }
+
+    /* Expanded row */
+    .chunk-detail { background: #f8fafc; border-bottom: 2px solid #e2e8f0; }
+    .chunk-detail td { padding: 16px 20px; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .detail-grid .detail-item { font-size: 13px; }
+    .detail-grid .detail-label { font-weight: 600; color: #475569; margin-bottom: 2px; }
+    .detail-grid .detail-value { color: #1a1a1a; }
+    .detail-text { background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; margin-top: 8px; max-height: 300px; overflow-y: auto; }
+
+    /* Pagination */
+    .pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 16px; }
+    .pagination button { padding: 6px 14px; background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; cursor: pointer; color: #1e293b; }
+    .pagination button:hover:not(:disabled) { background: #f1f5f9; }
+    .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .pagination .page-info { font-size: 13px; color: #64748b; }
+
+    /* Admin view sub-tabs */
+    .admin-view-tabs { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .admin-view-item { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; transition: all .15s; }
+    .admin-view-item:hover { border-color: #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .admin-view-item.active-row { border-color: #1e40af; background: #eff6ff; }
+    .admin-view-btn { padding: 6px 16px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; color: #64748b; transition: all .15s; white-space: nowrap; min-width: 140px; text-align: center; }
+    .admin-view-btn:hover { background: #e2e8f0; }
+    .admin-view-btn.active { background: #1e40af; color: #fff; border-color: #1e40af; }
+    .view-desc-label { font-size: 13px; color: #475569; line-height: 1.4; }
+    .view-desc-label .coll-name { font-weight: 600; color: #1e40af; }
+    .view-desc-label .coll-arrow { color: #94a3b8; margin: 0 2px; }
+    .view-desc-label .coll-detail { color: #64748b; font-size: 12px; }
+
+    /* Urgency badges */
+    .badge-immediate { background: #7f1d1d; color: #fff; }
+    .badge-very-urgent { background: #fee2e2; color: #991b1b; }
+    .badge-urgent { background: #ffedd5; color: #9a3412; }
+    .badge-non-urgent { background: #dcfce7; color: #166534; }
+
+    /* Admin status bar */
+    #admin-status { color: #64748b; font-size: 13px; padding: 8px 0; min-height: 24px; }
+
+    /* -- Responsive ----------------------------------------------------- */
+    @media (max-width: 640px) {
+      .patient-grid { grid-template-columns: 1fr; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .patient-buttons .pbtn { font-size: 11px; padding: 5px 10px; }
+      .chunks-table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <h1>NG12 Cancer Risk Assessor</h1>
+    <div class="header-links">
+      <a href="readme.html" target="_blank">Readme</a>
+      <a href="architecture.html" target="_blank">Architecture</a>
+      <a href="gallery.html" target="_blank">Gallery</a>
+      <a href="notes.html" target="_blank">Notes</a>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="assess">Patient Assessment</button>
+    <button class="tab-btn" data-tab="chat">Chat</button>
+    <button class="tab-btn" data-tab="admin">Vector DB Admin</button>
+  </div>
+
+  <!-- Assessment Panel -->
+  <div class="container" id="container-assess">
+    <div id="panel-assess" class="panel active">
+      <!-- Patient quick-select buttons -->
+      <div class="patient-buttons" id="patient-buttons"></div>
+
+      <!-- Input row -->
+      <div class="input-row">
+        <input id="patient-id" type="text" placeholder="Enter Patient ID (e.g. PT-101)" />
+        <button id="assess-btn" onclick="runAssessment()">Assess</button>
+      </div>
+
+      <!-- Result area -->
+      <div id="assess-result-area"></div>
+    </div>
+  </div>
+
+  <!-- Chat Panel -->
+  <div class="container" id="container-chat">
+    <div id="panel-chat" class="panel">
+      <!-- Toolbar: New Chat + session display -->
+      <div class="chat-toolbar">
+        <button class="new-chat-btn" onclick="newChat()">New Chat</button>
+        <span class="chat-session-id" id="chat-session-display"></span>
+      </div>
+
+      <!-- Message list -->
+      <div id="chat-messages"></div>
+
+      <!-- Debug info (collapsible) -->
+      <div class="chat-debug" id="chat-debug">
+        <button class="chat-debug-toggle" onclick="toggleChatDebug()">&#x1f50d; Debug Info</button>
+        <div class="chat-debug-content" id="chat-debug-content">
+          <span class="debug-row"><span class="debug-label">Query Strategy:</span> <span id="debug-strategy">-</span></span>
+          <span class="debug-row"><span class="debug-label">Search Query:</span> <span id="debug-query">-</span></span>
+          <span class="debug-row"><span class="debug-label">Guardrail:</span> <span id="debug-guardrail">-</span></span>
+        </div>
+      </div>
+
+      <!-- Input area -->
+      <div class="chat-input-area">
+        <div class="chat-input-row">
+          <textarea id="chat-input" rows="2" placeholder="Ask about NG12 guidelines..." onkeydown="handleChatKeydown(event)"></textarea>
+          <button id="chat-send-btn" onclick="sendMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Panel -->
+  <div class="container wide" id="container-admin">
+    <div id="panel-admin" class="panel">
+
+      <!-- Header row with title and re-index button -->
+      <div class="admin-header">
+        <h2>Vector DB Admin</h2>
+        <button id="reindex-btn" onclick="reindexPDF()">&#x1f504; Re-index PDF</button>
+      </div>
+
+      <!-- Stat cards -->
+      <div class="stat-cards" id="stat-cards">
+        <div class="stat-card"><div class="stat-value" id="stat-total">-</div><div class="stat-label">Total Chunks</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-canonical">-</div><div class="stat-label">Canonical Rules</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-search">-</div><div class="stat-label">Search Index</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-symptom">-</div><div class="stat-label">Symptom Index</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-referrals">-</div><div class="stat-label">Urgent Referrals</div></div>
+        <div class="stat-card"><div class="stat-value" id="stat-age">-</div><div class="stat-label">With Age Threshold</div></div>
+      </div>
+
+      <!-- Admin view sub-tabs -->
+      <div class="admin-view-tabs" id="admin-view-tabs">
+        <div class="admin-view-item active-row">
+          <button class="admin-view-btn active" data-view="canonical">Canonical Rules</button>
+          <span class="view-desc-label">rule_canonical <span class="coll-arrow">&rarr;</span> <span class="coll-name">ng12_canonical</span> collection (ID-based lookup, no embeddings)<br><span class="coll-detail">Verbatim PDF text for citation display</span></span>
+        </div>
+        <div class="admin-view-item">
+          <button class="admin-view-btn" data-view="rule_search">Search Index</button>
+          <span class="view-desc-label">rule_search <span class="coll-arrow">&rarr;</span> <span class="coll-name">ng12_guidelines</span> collection (filtered by doc_type=rule_search)<br><span class="coll-detail">Template-enriched text with synonym expansion for better vector retrieval</span></span>
+        </div>
+        <div class="admin-view-item">
+          <button class="admin-view-btn" data-view="symptom_index">Symptom Index</button>
+          <span class="view-desc-label">symptom_index <span class="coll-arrow">&rarr;</span> <span class="coll-name">ng12_guidelines</span> collection (filtered by doc_type=symptom_index)<br><span class="coll-detail">Symptom-to-cancer mapping with cross-references back to Part A rules</span></span>
+        </div>
+      </div>
+
+      <!-- Filters (dynamically generated) -->
+      <div class="filters-row" id="filters-row"></div>
+
+      <div id="admin-status"></div>
+
+      <!-- Chunks table -->
+      <table class="chunks-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Section</th><th>Cancer Type</th><th>Action</th><th>Urgency</th><th>Page</th><th>Age</th><th>Symptoms</th><th>Raw Text</th>
+          </tr>
+        </thead>
+        <tbody id="chunks-tbody"></tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        <button id="prev-btn" onclick="changePage(-1)" disabled>&laquo; Prev</button>
+        <span class="page-info" id="page-info">Page 1 / 1</span>
+        <button id="next-btn" onclick="changePage(1)" disabled>Next &raquo;</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // == Session ID ======================================================
+    let sessionId = crypto.randomUUID();
+    let chatMsgCounter = 0;
+
+    // Display session ID
+    function updateSessionDisplay() {
+      document.getElementById('chat-session-display').textContent = 'Session: ' + sessionId.substring(0, 8) + '...';
+    }
+    updateSessionDisplay();
+
+    // == Admin state =====================================================
+    let adminCurrentPage = 1;
+    let adminPageSize = 20;
+    let adminTotalPages = 1;
+    let adminStatsLoaded = false;
+    let expandedChunkId = null;
+    let adminCurrentView = 'canonical';  // 'canonical' | 'rule_search' | 'symptom_index'
+    let cachedStats = null;
+
+    // == Tab switching ===================================================
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        const tab = btn.dataset.tab;
+        document.getElementById('panel-' + tab).classList.add('active');
+
+        document.getElementById('container-assess').style.display = (tab === 'assess') ? '' : 'none';
+        document.getElementById('container-chat').style.display = (tab === 'chat') ? '' : 'none';
+        document.getElementById('container-admin').style.display = (tab === 'admin') ? '' : 'none';
+
+        if (tab === 'admin' && !adminStatsLoaded) {
+          adminStatsLoaded = true;
+          updateTableHeader();
+          updateFilters();
+          loadStats();
+          loadChunks(1);
+        }
+
+        if (tab === 'chat') {
+          document.getElementById('chat-input').focus();
+        }
+      });
+    });
+
+    // Initialize: hide non-active containers
+    document.getElementById('container-chat').style.display = 'none';
+    document.getElementById('container-admin').style.display = 'none';
+
+    // == Load patient quick-select buttons on page load ==================
+    async function loadPatientButtons() {
+      try {
+        const res = await fetch('/assess/patients');
+        const patients = await res.json();
+        const container = document.getElementById('patient-buttons');
+        patients.forEach(p => {
+          const btn = document.createElement('button');
+          btn.className = 'pbtn';
+          btn.textContent = p.patient_id + ' (' + p.name + ')';
+          btn.title = p.symptoms_summary;
+          btn.addEventListener('click', () => {
+            document.getElementById('patient-id').value = p.patient_id;
+            runAssessment();
+          });
+          container.appendChild(btn);
+        });
+      } catch (err) {
+        console.error('Failed to load patient buttons:', err);
+      }
+    }
+    loadPatientButtons();
+
+    // == Assessment ======================================================
+    async function runAssessment() {
+      const pid = document.getElementById('patient-id').value.trim();
+      if (!pid) return;
+
+      const btn = document.getElementById('assess-btn');
+      const resultArea = document.getElementById('assess-result-area');
+
+      btn.disabled = true;
+      // Disable quick-select buttons during assessment
+      document.querySelectorAll('.patient-buttons .pbtn').forEach(b => b.style.pointerEvents = 'none');
+
+      resultArea.innerHTML =
+        '<div class="loading-indicator">' +
+          '<div class="spinner"></div>' +
+          '<span>Assessing patient ' + escapeHtml(pid) + '...</span>' +
+        '</div>';
+
+      try {
+        const res = await fetch('/assess/' + encodeURIComponent(pid), { method: 'POST' });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({ detail: res.statusText }));
+          resultArea.innerHTML =
+            '<div class="error-card">' +
+              '<strong>Error ' + res.status + ':</strong> ' + escapeHtml(errData.detail || 'Unknown error') +
+            '</div>';
+          return;
+        }
+
+        const data = await res.json();
+        renderAssessmentResult(data);
+      } catch (err) {
+        resultArea.innerHTML =
+          '<div class="error-card">' +
+            '<strong>Network Error:</strong> ' + escapeHtml(err.message) +
+          '</div>';
+      } finally {
+        btn.disabled = false;
+        document.querySelectorAll('.patient-buttons .pbtn').forEach(b => b.style.pointerEvents = '');
+      }
+    }
+
+    function renderAssessmentResult(data) {
+      const resultArea = document.getElementById('assess-result-area');
+      let html = '';
+
+      // --- Section 1: Patient Info ---
+      const p = data.patient;
+      const symptomsHtml = (p.symptoms || []).map(s =>
+        '<span class="symptom-tag">' + escapeHtml(s) + '</span>'
+      ).join('');
+
+      html += '<div class="result-card">' +
+        '<h3>Patient Information</h3>' +
+        '<div class="patient-grid">' +
+          '<div><div class="field-label">Name</div><div class="field-value">' + escapeHtml(p.name) + '</div></div>' +
+          '<div><div class="field-label">Patient ID</div><div class="field-value">' + escapeHtml(p.patient_id) + '</div></div>' +
+          '<div><div class="field-label">Age</div><div class="field-value">' + p.age + '</div></div>' +
+          '<div><div class="field-label">Gender</div><div class="field-value">' + escapeHtml(p.gender) + '</div></div>' +
+          '<div><div class="field-label">Smoking History</div><div class="field-value">' + escapeHtml(p.smoking_history) + '</div></div>' +
+          '<div><div class="field-label">Symptom Duration</div><div class="field-value">' + p.symptom_duration_days + ' days</div></div>' +
+          '<div style="grid-column:1/-1"><div class="field-label">Symptoms</div><div class="field-value">' + symptomsHtml + '</div></div>' +
+        '</div>' +
+      '</div>';
+
+      // --- Section 2: Assessment Result ---
+      const a = data.assessment;
+      const riskClass = getRiskClass(a.risk_level);
+
+      html += '<div class="result-card">' +
+        '<h3>Assessment Result</h3>' +
+        '<div class="risk-badge ' + riskClass + '">' + escapeHtml(a.risk_level) + '</div>' +
+        '<div class="assess-field"><div class="af-label">Cancer Type</div><div class="af-value">' + escapeHtml(a.cancer_type) + '</div></div>' +
+        '<div class="assess-field"><div class="af-label">Recommended Action</div><div class="af-value">' + escapeHtml(a.recommended_action) + '</div></div>' +
+        '<div class="assess-field"><div class="af-label">Reasoning</div><div class="af-value">' + escapeHtml(a.reasoning) + '</div></div>' +
+      '</div>';
+
+      // --- Section 3: Matched Recommendations ---
+      const matched = a.matched_recommendations || [];
+      if (matched.length > 0) {
+        html += '<div class="result-card">' +
+          '<h3>Matched NG12 Recommendations (' + matched.length + ')</h3>';
+        matched.forEach(m => {
+          html += '<div class="match-item">' +
+            '<div><span class="mi-section">' + escapeHtml(m.section) + '</span>' +
+            actionBadge(m.action_type) + '</div>' +
+            '<div class="mi-criteria">' + escapeHtml(m.criteria_met) + '</div>';
+          if (m.criteria_from_guideline) {
+            html += '<div class="mi-guideline">"' + escapeHtml(m.criteria_from_guideline) + '"</div>';
+          }
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      // --- Section 4: Citations ---
+      const citations = data.citations || [];
+      if (citations.length > 0) {
+        html += '<div class="result-card">' +
+          '<h3>Guideline Citations (' + citations.length + ')</h3>';
+        citations.forEach((c, idx) => {
+          const cid = 'cite-excerpt-' + idx;
+          html += '<div class="citation-item" onclick="toggleExcerpt(\'' + cid + '\')">' +
+            '<div class="citation-header">' +
+              '<span class="ci-ref">[NG12 \u00a7' + escapeHtml(c.section) + ', p.' + c.page + ']</span>' +
+              '<span class="ci-chunk">' + escapeHtml(c.chunk_id) + '</span>' +
+              '<span class="ci-toggle">click to expand</span>' +
+            '</div>' +
+            '<div class="citation-excerpt" id="' + cid + '">' + escapeHtml(c.excerpt) + '</div>' +
+          '</div>';
+        });
+        html += '</div>';
+      }
+
+      // --- Section 5: Raw JSON ---
+      html += '<div class="result-card">' +
+        '<button class="raw-toggle" onclick="toggleRawJson()">\ud83d\udccb Show Raw JSON</button>' +
+        '<div class="raw-json" id="raw-json-content">' + escapeHtml(JSON.stringify(data, null, 2)) + '</div>' +
+      '</div>';
+
+      resultArea.innerHTML = html;
+    }
+
+    function getRiskClass(level) {
+      if (!level) return 'risk-no-criteria';
+      const lower = level.toLowerCase();
+      if (lower.startsWith('demo')) return 'risk-demo';
+      if (lower.includes('urgent referral')) return 'risk-urgent-referral';
+      if (lower.includes('urgent investigation')) return 'risk-urgent-investigation';
+      if (lower.includes('consider')) return 'risk-consider';
+      return 'risk-no-criteria';
+    }
+
+    function toggleExcerpt(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('open');
+    }
+
+    function toggleRawJson() {
+      const el = document.getElementById('raw-json-content');
+      if (el) el.classList.toggle('open');
+    }
+
+    // == Chat ============================================================
+
+    // New Chat: clear history and reset session
+    async function newChat() {
+      try {
+        await fetch('/chat/history/' + sessionId, { method: 'DELETE' });
+      } catch (e) {
+        // Ignore errors on delete; server may not have the session
+      }
+      sessionId = crypto.randomUUID();
+      updateSessionDisplay();
+      document.getElementById('chat-messages').innerHTML = '';
+      // Reset debug info
+      document.getElementById('debug-strategy').textContent = '-';
+      document.getElementById('debug-query').textContent = '-';
+      document.getElementById('debug-guardrail').textContent = '-';
+      document.getElementById('chat-input').focus();
+    }
+
+    // Handle keyboard: Enter sends, Shift+Enter inserts newline
+    function handleChatKeydown(event) {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+      }
+    }
+
+    // Append a message bubble to the chat. Returns the element ID.
+    function appendMessage(role, text, citations, extraClass) {
+      const messagesEl = document.getElementById('chat-messages');
+      const id = 'chat-msg-' + (++chatMsgCounter);
+
+      const div = document.createElement('div');
+      div.className = 'msg ' + role;
+      div.id = id;
+      if (extraClass) div.classList.add(extraClass);
+
+      // For assistant messages with guardrail icons, prefix the text
+      const textNode = document.createElement('span');
+      textNode.className = 'msg-text';
+      textNode.textContent = text;
+      div.appendChild(textNode);
+
+      // Add citation tags if provided
+      if (citations && citations.length > 0) {
+        const citeContainer = document.createElement('div');
+        citeContainer.className = 'chat-citations';
+        citations.forEach((c, idx) => {
+          const wrapper = document.createElement('span');
+          wrapper.style.display = 'inline-flex';
+          wrapper.style.flexDirection = 'column';
+
+          const tag = document.createElement('span');
+          tag.className = 'chat-cite-tag';
+          tag.textContent = '[NG12 \u00a7' + (c.section || '?') + ', p.' + (c.page || '?') + ']';
+          const excerptId = id + '-cite-' + idx;
+          tag.onclick = function(e) {
+            e.stopPropagation();
+            const ex = document.getElementById(excerptId);
+            if (ex) ex.classList.toggle('open');
+          };
+          wrapper.appendChild(tag);
+
+          if (c.excerpt) {
+            const excerpt = document.createElement('div');
+            excerpt.className = 'chat-cite-excerpt';
+            excerpt.id = excerptId;
+            excerpt.textContent = c.excerpt;
+            wrapper.appendChild(excerpt);
+          }
+
+          citeContainer.appendChild(wrapper);
+        });
+        div.appendChild(citeContainer);
+      }
+
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return id;
+    }
+
+    // Replace a thinking/placeholder message with the real answer
+    function replaceMessage(msgId, text, citations, guardrailResult) {
+      const div = document.getElementById(msgId);
+      if (!div) return;
+
+      // Remove old classes
+      div.classList.remove('thinking', 'msg-error', 'guardrail-warn', 'guardrail-weak');
+
+      // Apply guardrail styling
+      let prefix = '';
+      if (guardrailResult === 'none' || guardrailResult === 'out_of_scope') {
+        div.classList.add('guardrail-warn');
+        prefix = '\u26a0\ufe0f ';
+      } else if (guardrailResult === 'weak') {
+        div.classList.add('guardrail-weak');
+        prefix = '\u26a1 ';
+      }
+
+      // Clear existing content
+      div.innerHTML = '';
+
+      // Add text
+      const textNode = document.createElement('span');
+      textNode.className = 'msg-text';
+      textNode.textContent = prefix + text;
+      div.appendChild(textNode);
+
+      // Add citation tags
+      if (citations && citations.length > 0) {
+        const citeContainer = document.createElement('div');
+        citeContainer.className = 'chat-citations';
+        citations.forEach((c, idx) => {
+          const wrapper = document.createElement('span');
+          wrapper.style.display = 'inline-flex';
+          wrapper.style.flexDirection = 'column';
+
+          const tag = document.createElement('span');
+          tag.className = 'chat-cite-tag';
+          tag.textContent = '[NG12 \u00a7' + (c.section || '?') + ', p.' + (c.page || '?') + ']';
+          const excerptId = msgId + '-cite-' + idx;
+          tag.onclick = function(e) {
+            e.stopPropagation();
+            const ex = document.getElementById(excerptId);
+            if (ex) ex.classList.toggle('open');
+          };
+          wrapper.appendChild(tag);
+
+          if (c.excerpt) {
+            const excerpt = document.createElement('div');
+            excerpt.className = 'chat-cite-excerpt';
+            excerpt.id = excerptId;
+            excerpt.textContent = c.excerpt;
+            wrapper.appendChild(excerpt);
+          }
+
+          citeContainer.appendChild(wrapper);
+        });
+        div.appendChild(citeContainer);
+      }
+
+      // Scroll to bottom
+      const messagesEl = document.getElementById('chat-messages');
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    // Update the debug info panel
+    function updateDebugInfo(debug) {
+      if (!debug) return;
+      document.getElementById('debug-strategy').textContent = debug.query_strategy || '-';
+      document.getElementById('debug-query').textContent = debug.search_query || '-';
+      document.getElementById('debug-guardrail').textContent = debug.guardrail_result || '-';
+    }
+
+    function toggleChatDebug() {
+      document.getElementById('chat-debug-content').classList.toggle('open');
+    }
+
+    // Main send message function
+    async function sendMessage() {
+      const inputEl = document.getElementById('chat-input');
+      const sendBtn = document.getElementById('chat-send-btn');
+      const message = inputEl.value.trim();
+      if (!message) return;
+
+      // 1. Show user message immediately
+      appendMessage('user', message);
+      inputEl.value = '';
+
+      // 2. Show thinking placeholder
+      const thinkingId = appendMessage('assistant', '\u23f3 Thinking...', null, 'thinking');
+
+      // 3. Disable send button
+      sendBtn.disabled = true;
+
+      // 4. Send request
+      try {
+        const res = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sessionId, message: message }),
+        });
+        const data = await res.json();
+
+        // 5. Replace thinking with real answer
+        replaceMessage(
+          thinkingId,
+          data.answer,
+          data.citations,
+          data.debug ? data.debug.guardrail_result : null
+        );
+
+        // 6. Update debug info
+        updateDebugInfo(data.debug);
+      } catch (err) {
+        // Replace thinking with error
+        const div = document.getElementById(thinkingId);
+        if (div) {
+          div.classList.remove('thinking');
+          div.classList.add('msg-error');
+          div.querySelector('.msg-text').textContent = '\u274c Error: ' + err.message;
+        }
+      }
+
+      // 7. Re-enable send button and focus
+      sendBtn.disabled = false;
+      inputEl.focus();
+    }
+
+    // == Re-index PDF (admin tab) ========================================
+    async function reindexPDF() {
+      const btn = document.getElementById('reindex-btn');
+      btn.disabled = true;
+      btn.textContent = '\u23f3 Re-indexing...';
+      const statusEl = document.getElementById('admin-status');
+      statusEl.textContent = 'Re-indexing PDF, please wait...';
+
+      try {
+        const res = await fetch('/admin/refresh', { method: 'POST' });
+        const data = await res.json();
+        statusEl.textContent = 'Re-indexed ' + data.chunks_indexed + ' chunks. Refreshing...';
+        setTimeout(() => location.reload(), 2000);
+      } catch (err) {
+        statusEl.textContent = 'Re-index failed: ' + err.message;
+        btn.disabled = false;
+        btn.innerHTML = '&#x1f504; Re-index PDF';
+      }
+    }
+
+    // == Load Stats ======================================================
+    async function loadStats() {
+      try {
+        const res = await fetch('/admin/stats');
+        const data = await res.json();
+        cachedStats = data;
+
+        // Total = search + canonical (or use data.total_chunks if provided)
+        const searchTotal = (data.search_collection_total || 0);
+        const canonicalTotal = (data.canonical_collection_total || 0);
+        document.getElementById('stat-total').textContent = data.total_chunks || (searchTotal + canonicalTotal);
+        document.getElementById('stat-canonical').textContent = canonicalTotal;
+        document.getElementById('stat-search').textContent = (data.doc_type_distribution && data.doc_type_distribution.rule_search) || 0;
+        document.getElementById('stat-symptom').textContent = (data.doc_type_distribution && data.doc_type_distribution.symptom_index) || 0;
+        document.getElementById('stat-referrals').textContent = (data.action_type_distribution && data.action_type_distribution['Urgent Referral']) || 0;
+        document.getElementById('stat-age').textContent = data.chunks_with_age_threshold || 0;
+
+        // Populate filters for the current view
+        repopulateFilters();
+      } catch (err) {
+        document.getElementById('admin-status').textContent = 'Failed to load stats: ' + err.message;
+      }
+    }
+
+    function populateFilter(selectId, distribution, defaultLabel) {
+      const select = document.getElementById(selectId);
+      if (!select) return;
+      select.innerHTML = '<option value="">' + defaultLabel + '</option>';
+      const sorted = Object.keys(distribution).sort();
+      sorted.forEach(key => {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = key + ' (' + distribution[key] + ')';
+        select.appendChild(opt);
+      });
+    }
+
+    // == Load Chunks =====================================================
+    async function loadChunks(page) {
+      adminCurrentPage = page;
+      expandedChunkId = null;
+      const statusEl = document.getElementById('admin-status');
+      statusEl.textContent = 'Loading chunks...';
+
+      const params = new URLSearchParams({ page, page_size: adminPageSize });
+
+      // Build params based on current view
+      if (adminCurrentView === 'canonical') {
+        params.set('collection', 'canonical');
+        const ct = document.getElementById('filter-cancer-type');
+        if (ct && ct.value) params.set('cancer_type', ct.value);
+        const at = document.getElementById('filter-action-type');
+        if (at && at.value) params.set('action_type', at.value);
+      } else if (adminCurrentView === 'rule_search') {
+        params.set('collection', 'search');
+        params.set('doc_type', 'rule_search');
+        const ct = document.getElementById('filter-cancer-type');
+        if (ct && ct.value) params.set('cancer_type', ct.value);
+      } else if (adminCurrentView === 'symptom_index') {
+        params.set('collection', 'search');
+        params.set('doc_type', 'symptom_index');
+        const st = document.getElementById('filter-system-title');
+        if (st && st.value) params.set('system_title', st.value);
+      }
+
+      const searchInput = document.getElementById('filter-search');
+      if (searchInput && searchInput.value.trim()) {
+        params.set('search', searchInput.value.trim());
+      }
+
+      try {
+        const res = await fetch('/admin/chunks?' + params.toString());
+        const data = await res.json();
+
+        adminTotalPages = Math.max(1, Math.ceil(data.total / data.page_size));
+        renderChunksTable(data.chunks, data.page, data.page_size, data.total);
+        updatePagination();
+        statusEl.textContent = data.total + ' chunk(s) found';
+      } catch (err) {
+        statusEl.textContent = 'Failed to load chunks: ' + err.message;
+      }
+    }
+
+    // == Render Chunks Table =============================================
+    function renderChunksTable(chunks, page, pageSize, total) {
+      const tbody = document.getElementById('chunks-tbody');
+      tbody.innerHTML = '';
+
+      // Determine colspan based on current view
+      const colCount = adminCurrentView === 'canonical' ? 9
+                     : adminCurrentView === 'rule_search' ? 5
+                     : 8;
+
+      if (chunks.length === 0) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td colspan="' + colCount + '" style="text-align:center;color:#94a3b8;padding:32px;">No chunks found</td>';
+        tbody.appendChild(tr);
+        return;
+      }
+
+      chunks.forEach((chunk, idx) => {
+        const rowNum = (page - 1) * pageSize + idx + 1;
+        const tr = document.createElement('tr');
+        tr.dataset.chunkId = chunk.chunk_id || ('row-' + idx);
+        tr.addEventListener('click', () => toggleChunkDetail(chunk));
+
+        if (adminCurrentView === 'canonical') {
+          let ageText = '';
+          if (chunk.age_min != null) ageText += '\u2265' + chunk.age_min;
+          if (chunk.age_max != null) ageText += (ageText ? ', ' : '') + '<' + chunk.age_max;
+
+          const symptoms = chunk.symptom_keywords || [];
+          const symptomHtml = symptoms.map(s => '<span class="symptom-tag">' + escapeHtml(s) + '</span>').join('');
+          const preview = escapeHtml((chunk.text || chunk.text_preview || '').substring(0, 100));
+
+          tr.innerHTML =
+            '<td>' + rowNum + '</td>' +
+            '<td>' + escapeHtml(chunk.section || '') + '</td>' +
+            '<td>' + escapeHtml(chunk.cancer_type || '') + '</td>' +
+            '<td>' + actionBadge(chunk.action_type) + '</td>' +
+            '<td>' + urgencyBadge(chunk.urgency) + '</td>' +
+            '<td>' + (chunk.page || '') + '</td>' +
+            '<td>' + ageText + '</td>' +
+            '<td>' + symptomHtml + '</td>' +
+            '<td><span class="text-preview" title="' + escapeAttr(chunk.text || '') + '">' + preview + '</span></td>';
+
+        } else if (adminCurrentView === 'rule_search') {
+          const preview = escapeHtml((chunk.text || chunk.text_preview || '').substring(0, 120));
+          tr.innerHTML =
+            '<td>' + rowNum + '</td>' +
+            '<td style="font-family:monospace;font-size:12px;">' + escapeHtml(chunk.chunk_id || '') + '</td>' +
+            '<td>' + escapeHtml(chunk.rule_id || '') + '</td>' +
+            '<td>' + escapeHtml(chunk.cancer_type || '') + '</td>' +
+            '<td><span class="text-preview" title="' + escapeAttr(chunk.text || '') + '">' + preview + '</span></td>';
+
+        } else {
+          // symptom_index
+          const symptomText = escapeHtml((chunk.symptom || '').substring(0, 80));
+          const refsJson = chunk.references ? escapeHtml(JSON.stringify(chunk.references)) : '';
+          const preview = escapeHtml((chunk.text || chunk.text_preview || '').substring(0, 100));
+          tr.innerHTML =
+            '<td>' + rowNum + '</td>' +
+            '<td>' + escapeHtml(chunk.system_title || '') + '</td>' +
+            '<td>' + escapeHtml(chunk.sub_title || '') + '</td>' +
+            '<td>' + symptomText + '</td>' +
+            '<td>' + escapeHtml(chunk.possible_cancer || '') + '</td>' +
+            '<td style="font-size:11px;">' + refsJson + '</td>' +
+            '<td>' + (chunk.page || '') + '</td>' +
+            '<td><span class="text-preview" title="' + escapeAttr(chunk.text || '') + '">' + preview + '</span></td>';
+        }
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    // == Toggle Chunk Detail =============================================
+    function toggleChunkDetail(chunk) {
+      const tbody = document.getElementById('chunks-tbody');
+      const cid = chunk.chunk_id || chunk.rule_id || 'detail';
+      const existingDetail = document.getElementById('detail-' + cid);
+
+      if (existingDetail) {
+        existingDetail.remove();
+        expandedChunkId = null;
+        return;
+      }
+
+      const oldDetail = tbody.querySelector('.chunk-detail');
+      if (oldDetail) oldDetail.remove();
+
+      expandedChunkId = cid;
+
+      const rows = tbody.querySelectorAll('tr:not(.chunk-detail)');
+      let targetRow = null;
+      rows.forEach(row => {
+        if (row.dataset.chunkId === cid) targetRow = row;
+      });
+
+      if (!targetRow) return;
+
+      const detailRow = document.createElement('tr');
+      detailRow.className = 'chunk-detail';
+      detailRow.id = 'detail-' + cid;
+
+      // Determine colspan based on view
+      const colCount = adminCurrentView === 'canonical' ? 9
+                     : adminCurrentView === 'rule_search' ? 5
+                     : 8;
+
+      let detailHtml = '';
+
+      if (adminCurrentView === 'canonical') {
+        const symptoms = chunk.symptom_keywords || [];
+        const symptomHtml = symptoms.length > 0
+          ? symptoms.map(s => '<span class="symptom-tag">' + escapeHtml(s) + '</span>').join(' ')
+          : '<span style="color:#94a3b8;">None</span>';
+
+        let ageText = '';
+        if (chunk.age_min != null) ageText += '\u2265 ' + chunk.age_min;
+        if (chunk.age_max != null) ageText += (ageText ? ', ' : '') + '< ' + chunk.age_max;
+        if (!ageText) ageText = '<span style="color:#94a3b8;">Not specified</span>';
+
+        const qualifiers = chunk.qualifiers ? escapeHtml(JSON.stringify(chunk.qualifiers)) : '<span style="color:#94a3b8;">None</span>';
+        const riskFactors = chunk.risk_factors ? escapeHtml(JSON.stringify(chunk.risk_factors)) : '<span style="color:#94a3b8;">None</span>';
+
+        detailHtml =
+          '<td colspan="' + colCount + '">' +
+            '<div class="detail-grid">' +
+              '<div class="detail-item"><div class="detail-label">Chunk ID</div><div class="detail-value" style="font-family:monospace;">' + escapeHtml(chunk.chunk_id || '') + '</div></div>' +
+              '<div class="detail-item"><div class="detail-label">Section</div><div class="detail-value">' + escapeHtml(chunk.section || 'N/A') + '</div></div>' +
+              '<div class="detail-item"><div class="detail-label">Cancer Type</div><div class="detail-value">' + escapeHtml(chunk.cancer_type || 'Unknown') + '</div></div>' +
+              '<div class="detail-item"><div class="detail-label">Action Type</div><div class="detail-value">' + actionBadge(chunk.action_type) + '</div></div>' +
+              '<div class="detail-item"><div class="detail-label">Urgency</div><div class="detail-value">' + urgencyBadge(chunk.urgency) + '</div></div>' +
+              '<div class="detail-item"><div class="detail-label">Page Range</div><div class="detail-value">' + (chunk.page || '?') + (chunk.page_end && chunk.page_end !== chunk.page ? ' - ' + chunk.page_end : '') + '</div></div>' +
+              '<div class="detail-item"><div class="detail-label">Age Threshold</div><div class="detail-value">' + ageText + '</div></div>' +
+              '<div class="detail-item"><div class="detail-label">Symptom Keywords</div><div class="detail-value">' + symptomHtml + '</div></div>' +
+              '<div class="detail-item"><div class="detail-label">Qualifiers</div><div class="detail-value" style="font-size:12px;">' + qualifiers + '</div></div>' +
+              '<div class="detail-item"><div class="detail-label">Risk Factors</div><div class="detail-value" style="font-size:12px;">' + riskFactors + '</div></div>' +
+            '</div>' +
+            '<div class="detail-label">Raw Text (PDF Original)</div>' +
+            '<div class="detail-text">' + escapeHtml(chunk.text || '') + '</div>' +
+          '</td>';
+
+      } else if (adminCurrentView === 'rule_search') {
+        detailHtml =
+          '<td colspan="' + colCount + '">' +
+            '<div class="detail-grid">' +
+              '<div class="detail-item"><div class="detail-label">Chunk ID</div><div class="detail-value" style="font-family:monospace;">' + escapeHtml(chunk.chunk_id || '') + '</div></div>' +
+              '<div class="detail-item"><div class="detail-label">Rule ID</div><div class="detail-value">' + escapeHtml(chunk.rule_id || '') + '</div></div>' +
+              '<div class="detail-item"><div class="detail-label">Cancer Type</div><div class="detail-value">' + escapeHtml(chunk.cancer_type || '') + '</div></div>' +
+            '</div>' +
+            '<div class="detail-label">Template Text</div>' +
+            '<div class="detail-text">' + escapeHtml(chunk.text || '') + '</div>' +
+          '</td>';
+
+      } else {
+        // symptom_index
+        const refs = chunk.references ? escapeHtml(JSON.stringify(chunk.references, null, 2)) : '<span style="color:#94a3b8;">None</span>';
+        detailHtml =
+          '<td colspan="' + colCount + '">' +
+            '<div class="detail-grid">' +
+              '<div class="detail-item"><div class="detail-label">System Title</div><div class="detail-value">' + escapeHtml(chunk.system_title || '') + '</div></div>' +
+              '<div class="detail-item"><div class="detail-label">Subsection</div><div class="detail-value">' + escapeHtml(chunk.sub_title || '') + '</div></div>' +
+              '<div class="detail-item"><div class="detail-label">Symptom</div><div class="detail-value">' + escapeHtml(chunk.symptom || '') + '</div></div>' +
+              '<div class="detail-item"><div class="detail-label">Possible Cancer</div><div class="detail-value">' + escapeHtml(chunk.possible_cancer || '') + '</div></div>' +
+              '<div class="detail-item" style="grid-column:1/-1"><div class="detail-label">References</div><div class="detail-value" style="font-size:12px;white-space:pre-wrap;">' + refs + '</div></div>' +
+            '</div>' +
+            '<div class="detail-label">Full Text</div>' +
+            '<div class="detail-text">' + escapeHtml(chunk.text || '') + '</div>' +
+          '</td>';
+      }
+
+      detailRow.innerHTML = detailHtml;
+      targetRow.after(detailRow);
+    }
+
+    // == Pagination ======================================================
+    function updatePagination() {
+      document.getElementById('prev-btn').disabled = adminCurrentPage <= 1;
+      document.getElementById('next-btn').disabled = adminCurrentPage >= adminTotalPages;
+      document.getElementById('page-info').textContent = 'Page ' + adminCurrentPage + ' / ' + adminTotalPages;
+    }
+
+    function changePage(delta) {
+      const newPage = adminCurrentPage + delta;
+      if (newPage >= 1 && newPage <= adminTotalPages) {
+        loadChunks(newPage);
+      }
+    }
+
+    // == Action Type Badge ===============================================
+    function actionBadge(type) {
+      if (!type) return '<span class="badge badge-other">Other</span>';
+      const lower = type.toLowerCase();
+      let cls = 'badge-other';
+      if (lower.includes('urgent referral')) cls = 'badge-urgent-referral';
+      else if (lower.includes('urgent investigation')) cls = 'badge-urgent-investigation';
+      else if (lower.includes('consider')) cls = 'badge-consider';
+      else if (lower.includes('safety net') || lower.includes('safety-net')) cls = 'badge-safety-net';
+      else if (lower.includes('do not')) cls = 'badge-do-not';
+      return '<span class="badge ' + cls + '">' + escapeHtml(type) + '</span>';
+    }
+
+    // == Urgency Badge ===================================================
+    function urgencyBadge(urgency) {
+      if (!urgency) return '<span class="badge badge-other">-</span>';
+      const lower = urgency.toLowerCase();
+      let cls = 'badge-other';
+      if (lower.includes('immediate')) cls = 'badge-immediate';
+      else if (lower.includes('very urgent')) cls = 'badge-very-urgent';
+      else if (lower.includes('non-urgent') || lower.includes('non urgent')) cls = 'badge-non-urgent';
+      else if (lower.includes('urgent')) cls = 'badge-urgent';
+      return '<span class="badge ' + cls + '">' + escapeHtml(urgency) + '</span>';
+    }
+
+    // == Update Table Header ==============================================
+    function updateTableHeader() {
+      const thead = document.querySelector('.chunks-table thead tr');
+      if (!thead) return;
+      if (adminCurrentView === 'canonical') {
+        thead.innerHTML = '<th>#</th><th>Section</th><th>Cancer Type</th><th>Action</th><th>Urgency</th><th>Page</th><th>Age</th><th>Symptoms</th><th>Raw Text</th>';
+      } else if (adminCurrentView === 'rule_search') {
+        thead.innerHTML = '<th>#</th><th>Chunk ID</th><th>Rule ID</th><th>Cancer Site</th><th>Text Preview</th>';
+      } else {
+        thead.innerHTML = '<th>#</th><th>System</th><th>Subsection</th><th>Symptom</th><th>Cancer</th><th>Refs</th><th>Page</th><th>Text Preview</th>';
+      }
+    }
+
+    // == Update Filters ===================================================
+    function updateFilters() {
+      const row = document.getElementById('filters-row');
+      if (!row) return;
+      let html = '';
+
+      if (adminCurrentView === 'canonical') {
+        html = '<select id="filter-cancer-type"><option value="">All Cancer Types</option></select>' +
+               '<select id="filter-action-type"><option value="">All Action Types</option></select>' +
+               '<input id="filter-search" type="text" placeholder="Search text..." onkeydown="if(event.key===\'Enter\')loadChunks(1)" />' +
+               '<button onclick="loadChunks(1)">Search</button>';
+      } else if (adminCurrentView === 'rule_search') {
+        html = '<select id="filter-cancer-type"><option value="">All Cancer Types</option></select>' +
+               '<input id="filter-search" type="text" placeholder="Search text..." onkeydown="if(event.key===\'Enter\')loadChunks(1)" />' +
+               '<button onclick="loadChunks(1)">Search</button>';
+      } else {
+        html = '<select id="filter-system-title"><option value="">All Systems</option></select>' +
+               '<input id="filter-search" type="text" placeholder="Search text..." onkeydown="if(event.key===\'Enter\')loadChunks(1)" />' +
+               '<button onclick="loadChunks(1)">Search</button>';
+      }
+
+      row.innerHTML = html;
+
+      // Re-populate filters from cached stats
+      repopulateFilters();
+
+      // Attach filter change listeners
+      const ct = document.getElementById('filter-cancer-type');
+      if (ct) ct.addEventListener('change', () => loadChunks(1));
+      const at = document.getElementById('filter-action-type');
+      if (at) at.addEventListener('change', () => loadChunks(1));
+      const st = document.getElementById('filter-system-title');
+      if (st) st.addEventListener('change', () => loadChunks(1));
+    }
+
+    // == Repopulate Filter Dropdowns from Cache ===========================
+    function repopulateFilters() {
+      if (!cachedStats) return;
+      if (adminCurrentView === 'canonical' || adminCurrentView === 'rule_search') {
+        if (cachedStats.cancer_type_distribution) {
+          populateFilter('filter-cancer-type', cachedStats.cancer_type_distribution, 'All Cancer Types');
+        }
+      }
+      if (adminCurrentView === 'canonical') {
+        if (cachedStats.action_type_distribution) {
+          populateFilter('filter-action-type', cachedStats.action_type_distribution, 'All Action Types');
+        }
+      }
+      if (adminCurrentView === 'symptom_index') {
+        if (cachedStats.system_title_distribution) {
+          populateFilter('filter-system-title', cachedStats.system_title_distribution, 'All Systems');
+        }
+      }
+    }
+
+    // == Admin View Tab Switching ==========================================
+    document.querySelectorAll('.admin-view-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Update active button and row highlight
+        document.querySelectorAll('.admin-view-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.admin-view-item').forEach(item => item.classList.remove('active-row'));
+        btn.classList.add('active');
+        btn.closest('.admin-view-item').classList.add('active-row');
+
+        // Update current view
+        adminCurrentView = btn.dataset.view;
+
+        // Rebuild filters & table header
+        updateFilters();
+        updateTableHeader();
+
+        // Reload data
+        loadChunks(1);
+      });
+    });
+
+    // == Utility =========================================================
+    function escapeHtml(str) {
+      if (str == null) return '';
+      const div = document.createElement('div');
+      div.textContent = String(str);
+      return div.innerHTML;
+    }
+
+    function escapeAttr(str) {
+      if (str == null) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+  </script>
+</body>
+</html>

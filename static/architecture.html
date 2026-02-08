@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NG12 - Architecture</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f4f5f7; color: #1a1a1a; min-height: 100vh; }
+
+    /* Header */
+    header { background: linear-gradient(135deg, #1e40af, #2563eb); color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 56px; }
+    header h1 { font-size: 18px; font-weight: 600; }
+    .header-nav { display: flex; align-items: center; gap: 10px; }
+    .header-nav a { color: #fff; font-size: 13px; font-weight: 500; text-decoration: none; padding: 6px 16px; border: 1px solid rgba(255,255,255,0.4); border-radius: 6px; transition: all .15s; }
+    .header-nav a:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.7); }
+
+    /* Page title */
+    .page-title { max-width: 1100px; margin: 0 auto; padding: 32px 24px 8px; }
+    .page-title h2 { font-size: 24px; font-weight: 700; color: #1e293b; }
+    .page-title p { font-size: 14px; color: #64748b; margin-top: 6px; }
+
+    /* Cards container */
+    .cards { max-width: 1100px; margin: 0 auto; padding: 16px 24px 48px; display: flex; flex-direction: column; gap: 24px; }
+
+    /* Architecture card */
+    .arch-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .arch-card-body { padding: 24px; display: flex; gap: 24px; align-items: flex-start; }
+    .arch-card-text { flex: 1; min-width: 0; }
+    .arch-card-text h3 { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 8px; }
+    .arch-card-text .card-number { display: inline-block; background: #1e40af; color: #fff; font-size: 12px; font-weight: 700; width: 24px; height: 24px; line-height: 24px; text-align: center; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+    .arch-card-text p { font-size: 14px; line-height: 1.7; color: #475569; margin-bottom: 10px; }
+    .arch-card-text ul { font-size: 13px; line-height: 1.7; color: #64748b; padding-left: 18px; }
+    .arch-card-text ul li { margin-bottom: 4px; }
+    .arch-card-text .key-label { font-weight: 600; color: #334155; }
+
+    /* Thumbnail */
+    .arch-thumb { flex-shrink: 0; width: 280px; cursor: pointer; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; transition: box-shadow .2s, transform .15s; }
+    .arch-thumb:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); transform: scale(1.02); }
+    .arch-thumb img { width: 100%; height: auto; display: block; }
+
+    /* Lightbox overlay */
+    .lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
+    .lightbox.open { display: flex; }
+    .lightbox-header { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: rgba(0,0,0,0.5); z-index: 1002; }
+    .lightbox-title { color: #fff; font-size: 16px; font-weight: 600; }
+    .lightbox-controls { display: flex; gap: 8px; align-items: center; }
+    .lightbox-controls button { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; font-size: 16px; width: 36px; height: 36px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s; }
+    .lightbox-controls button:hover { background: rgba(255,255,255,0.3); }
+    .lightbox-controls .zoom-level { color: #94a3b8; font-size: 13px; min-width: 48px; text-align: center; }
+
+    .lightbox-img-container { flex: 1; width: 100%; overflow: auto; display: flex; justify-content: center; align-items: center; padding: 60px 20px 20px; cursor: grab; }
+    .lightbox-img-container:active { cursor: grabbing; }
+    .lightbox-img-container img { max-width: none; transform-origin: center center; user-select: none; }
+    .lightbox-img-container.smooth img { transition: transform 0.2s ease; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .arch-card-body { flex-direction: column-reverse; }
+      .arch-thumb { width: 100%; }
+      .page-title { padding: 20px 16px 4px; }
+      .cards { padding: 12px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>NG12 Assessor - Architecture</h1>
+    <div class="header-nav">
+      <a href="index.html">&larr; Back to App</a>
+      <a href="readme.html" target="_blank">Readme</a>
+      <a href="gallery.html" target="_blank">Gallery</a>
+      <a href="notes.html" target="_blank">Notes</a>
+    </div>
+  </header>
+
+  <div class="page-title">
+    <h2>System Architecture Diagrams</h2>
+    <p>Visual overview of the NG12 Cancer Risk Assessor's internal architecture, data flow, and decision logic.</p>
+  </div>
+
+  <div class="cards">
+
+    <!-- 1. System Architecture Overview -->
+    <div class="arch-card">
+      <div class="arch-card-body">
+        <div class="arch-card-text">
+          <h3><span class="card-number">1</span>System Architecture Overview</h3>
+          <p>
+            The system is organised into five layers: a single-page frontend, a FastAPI routing layer,
+            LangGraph workflow agents, a shared RAG core, and external AI services.
+          </p>
+          <p>
+            The <span class="key-label">Frontend</span> (<code>index.html</code>) provides three tabs &mdash;
+            Patient Assessment, Chat, and Vector DB Admin &mdash; each backed by a dedicated API router:
+            <code>/assess/*</code>, <code>/chat/*</code>, and <code>/admin/*</code>.
+            Routers delegate execution to two <span class="key-label">LangGraph workflow agents</span>:
+            the Assessment workflow (4 nodes, structured clinical risk assessment for a specific patient)
+            and the Chat workflow (12 nodes, multi-turn Q&amp;A with guardrails, query rewriting, and topic tracking).
+          </p>
+          <p>
+            Both workflows share a common <span class="key-label">core layer</span> while differing only in reranking strategy inside the RAG pipeline.
+            Core modules include <code>rag_pipeline.py</code> (vector retrieval, mode-specific deterministic reranking, canonical resolution),
+            <code>vector_store.py</code> (ChromaDB wrapper), <code>query_builder.py</code> (A+C+B tiered query construction),
+            <code>embeddings.py</code> (Vertex AI client), and <code>gemini_client.py</code> (Gemini 2.0 Flash client).
+          </p>
+          <p>
+            <span class="key-label">Vector storage</span> uses two logical layers in ChromaDB.
+            <code>ng12_canonical</code> holds verbatim guideline text &mdash; never embedded, accessed only by ID for citation and grounding.
+            <code>ng12_guidelines</code> holds the search-optimised chunks used for retrieval, mixing two document types:
+            <span class="key-label">rule_search</span> (embedding-optimised rule representations, each referencing a single canonical via <code>rule_id</code>)
+            and <span class="key-label">symptom_index</span> (Part B symptom table rows, each referencing one or more canonicals via <code>references_json</code>).
+          </p>
+          <ul>
+            <li><span class="key-label">Frontend:</span> Single HTML page with 3 tabs + Architecture, Gallery, Notes, Readme pages</li>
+            <li><span class="key-label">Backend:</span> FastAPI with 3 routers &rarr; 2 LangGraph workflow agents</li>
+            <li><span class="key-label">Shared Core:</span> RAG pipeline (mode-aware reranking), vector store, query builder, embeddings, Gemini client</li>
+            <li><span class="key-label">Storage:</span> ChromaDB (<code>ng12_canonical</code> for citation, <code>ng12_guidelines</code> for retrieval), SessionStore (in-memory), patients.json</li>
+            <li><span class="key-label">External:</span> Vertex AI <code>text-embedding-004</code>, Gemini 2.0 Flash</li>
+          </ul>
+        </div>
+        <div class="arch-thumb" onclick="openLightbox('image/10_system_overview.png', 'System Architecture Overview')">
+          <img src="image/10_system_overview.png" alt="System Architecture Overview" loading="lazy" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. PDF Ingestion Pipeline -->
+    <div class="arch-card">
+      <div class="arch-card-body">
+        <div class="arch-card-text">
+          <h3><span class="card-number">2</span>PDF Ingestion Pipeline</h3>
+          <p>
+            Transforms the 85+ page NG12 PDF into structured, searchable chunks stored across three ChromaDB collections.
+            A state-machine parser drives through three document regions: <span class="key-label">PART_A</span> (clinical recommendations, pages 8-36),
+            <span class="key-label">PART_B</span> (symptom-to-cancer index tables, pages 37-82), and <span class="key-label">STOP</span> (appendices, discarded).
+          </p>
+          <p>
+            Part A rules are detected via regex patterns matching section numbers (1.x.y) and recommendation verbs (Refer, Offer, Consider).
+            Each rule is split into two companion chunks: a <span class="key-label">rule_canonical</span> (verbatim PDF text for citation display)
+            and a <span class="key-label">rule_search</span> (template-enriched text with synonym expansion for better vector retrieval).
+            Part B symptom tables produce <span class="key-label">symptom_index</span> chunks with cross-references back to Part A rules.
+          </p>
+          <ul>
+            <li><span class="key-label">rule_canonical</span> &rarr; <code>ng12_canonical</code> collection (ID-based lookup, no embeddings)</li>
+            <li><span class="key-label">rule_search</span> &rarr; <code>ng12_guidelines</code> collection (vector similarity search)</li>
+            <li><span class="key-label">symptom_index</span> &rarr; <code>ng12_guidelines</code> collection (vector similarity search)</li>
+            <li>Metadata extracted: section, cancer_type, action_type, age thresholds, symptom keywords, urgency, gender, risk factors</li>
+            <li>Embeddings generated via Vertex AI <code>text-embedding-004</code></li>
+          </ul>
+        </div>
+        <div class="arch-thumb" onclick="openLightbox('image/01_ingestion_pipeline.png', 'PDF Ingestion Pipeline')">
+          <img src="image/01_ingestion_pipeline.png" alt="PDF Ingestion Pipeline" loading="lazy" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Patient Assessment Workflow -->
+    <div class="arch-card">
+      <div class="arch-card-body">
+        <div class="arch-card-text">
+          <h3><span class="card-number">3</span>Patient Assessment Workflow</h3>
+          <p>
+            A LangGraph workflow that performs clinical risk assessment against NG12 guidelines.
+            Given a patient ID, the system fetches patient data (age, symptoms, smoking history, gender), retrieves relevant guideline chunks
+            via the RAG pipeline with patient-specific reranking, then asks Gemini 2.0 Flash to assess cancer risk and produce a structured JSON response.
+          </p>
+          <p>
+            The <span class="key-label">fetch_patient</span> node first attempts Gemini function calling (tool use) to look up patient data;
+            if credentials are unavailable, it falls back to a direct database lookup from <code>patients.json</code>.
+            The <span class="key-label">retrieve_guidelines</span> node constructs a query string from the patient's symptoms, age, gender, and smoking history,
+            then calls <code>rag_pipeline.retrieve(top_k=8, patient_data=patient)</code> which applies deterministic scoring boosts for age, symptom overlap, smoking, and gender matching.
+            The <span class="key-label">assess_risk</span> node sends the patient data and retrieved chunks to Gemini with a strict JSON-only system prompt,
+            producing risk_level, cancer_type, recommended_action, reasoning, and matched_recommendations.
+          </p>
+          <ul>
+            <li><span class="key-label">3 LangGraph nodes:</span> fetch_patient &rarr; retrieve_guidelines &rarr; assess_risk (+ handle_error)</li>
+            <li><span class="key-label">Patient scoring boosts:</span> +0.15 age match, +0.10 symptom overlap, +0.10 smoking, +0.05/-0.30 gender</li>
+            <li>Output: risk_level, cancer_type, recommended_action, reasoning, matched NG12 recommendations with citations</li>
+          </ul>
+        </div>
+        <div class="arch-thumb" onclick="openLightbox('image/02_assessment_workflow.png', 'Patient Assessment Workflow')">
+          <img src="image/02_assessment_workflow.png" alt="Patient Assessment Workflow" loading="lazy" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Chat Workflow -->
+    <div class="arch-card">
+      <div class="arch-card-body">
+        <div class="arch-card-text">
+          <h3><span class="card-number">4</span>Chat Workflow (LangGraph)</h3>
+          <p>
+            A 12-node LangGraph workflow powering multi-turn conversational Q&A about NG12 guidelines.
+            Features a dual-guardrail system: an <span class="key-label">input guardrail</span> classifies messages into smalltalk, meta, medical_out_of_scope, or proceed;
+            and an <span class="key-label">output guardrail</span> assesses retrieved chunk quality to route between four response paths.
+          </p>
+          <p>
+            The input guardrail short-circuits non-clinical queries (greetings, "who are you", treatment/prognosis questions)
+            with canned responses, avoiding unnecessary RAG retrieval. For in-scope questions, the system builds a search query
+            using the A+C+B tiered strategy, retrieves chunks, then the output guardrail evaluates chunk quality scores to determine the response path:
+            <span class="key-label">generate</span> (sufficient evidence &mdash; full grounded answer with citations),
+            <span class="key-label">qualify</span> (weak evidence &mdash; hedged partial answer),
+            <span class="key-label">refuse</span> (no evidence &mdash; suggests reformulating), or
+            <span class="key-label">out_of_scope</span> (detected non-NG12 topic).
+          </p>
+          <ul>
+            <li><span class="key-label">Flow:</span> load_history &rarr; input_guardrail &rarr; build_query &rarr; retrieve &rarr; guardrail_check &rarr; summarize_query &rarr; generate/qualify/refuse/out_of_scope &rarr; save_history</li>
+            <li><span class="key-label">Session tracking:</span> conversation history + topic extraction from cited chunks for context-aware follow-ups</li>
+            <li><span class="key-label">Query summary:</span> Gemini extracts structured clinical info (symptoms, age, duration) for display transparency</li>
+            <li>Topic updates only on sufficient/weak results with valid citations</li>
+          </ul>
+        </div>
+        <div class="arch-thumb" onclick="openLightbox('image/04_chat_workflow.png', 'Chat Workflow (LangGraph)')">
+          <img src="image/04_chat_workflow.png" alt="Chat Workflow" loading="lazy" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Retrieval Pipeline -->
+    <div class="arch-card">
+      <div class="arch-card-body">
+        <div class="arch-card-text">
+          <h3><span class="card-number">5</span>Retrieval Pipeline (Detailed)</h3>
+          <p>
+            A shared retrieval engine used by both the Assessment and Chat workflows.
+            It queries ChromaDB's <code>ng12_guidelines</code> collection for a 3&times; candidate pool
+            (<code>fetch_k = top_k * 3</code>) using cosine similarity, then applies mode-specific additive reranking
+            and re-sorts by the adjusted score before returning the final top_k results.
+          </p>
+          <p>
+            <span class="key-label">Assessment mode</span> (patient_data provided): deterministic clinical boosts are applied
+            (age threshold matches, symptom keyword overlap, smoking risk factor, and gender match/clash).
+          </p>
+          <p>
+            <span class="key-label">Chat mode</span> (patient_data absent): lightweight intent boosts are applied based on query signals
+            (urgency, age mentions, duration intent + duration terms present in chunk text, and exact-wording requests favouring rule_search).
+          </p>
+          <p>
+            After reranking, results are enriched via <span class="key-label">_attach_canonicals()</span> by resolving evidence
+            from the canonical store through ID lookup:
+          </p>
+          <ul>
+            <li><span class="key-label">rule_search</span> &rarr; attaches a single canonical rule (<code>canonical_text</code>, <code>canonical_metadata</code>) via <code>rule_id</code></li>
+            <li><span class="key-label">symptom_index</span> &rarr; attaches multiple referenced canonicals (<code>referenced_canonicals</code>) via <code>references_json</code></li>
+          </ul>
+          <p>The enriched chunks are then passed into the downstream LLM prompt in both workflows.</p>
+
+          <h4 style="font-size:14px; font-weight:600; color:#1e293b; margin-top:16px; margin-bottom:8px;">6-Step Flow</h4>
+          <ol style="font-size:13px; line-height:1.8; color:#475569; padding-left:18px;">
+            <li><span class="key-label">Query enters RAG pipeline</span> &rarr; vector search against <code>ng12_guidelines</code> (rule_search + symptom_index mixed)</li>
+            <li><span class="key-label">Candidate recall</span> &rarr; <code>fetch_k = top_k &times; 3</code> chunks via cosine similarity</li>
+            <li><span class="key-label">Mode-specific reranking</span> &rarr; Assessment: patient-driven clinical boosts &nbsp;|&nbsp; Chat: query-intent-driven boosts</li>
+            <li><span class="key-label">Score adjustment &amp; sorting</span> &rarr; <code>final_score = base_similarity + additive boosts</code>, re-sort candidates</li>
+            <li><span class="key-label">Canonical resolution</span> &rarr; rule_search: resolve <code>rule_id</code> &rarr; single canonical &nbsp;|&nbsp; symptom_index: resolve <code>references_json</code> &rarr; multiple canonicals</li>
+            <li><span class="key-label">LLM grounding</span> &rarr; enriched chunks (including symptom_index + resolved canonicals) are passed directly into the LLM prompt</li>
+          </ol>
+        </div>
+        <div class="arch-thumb" onclick="openLightbox('image/05_retrieval_pipeline.png', 'Retrieval Pipeline (Detailed)')">
+          <img src="image/05_retrieval_pipeline.png" alt="Retrieval Pipeline" loading="lazy" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. Memory & Topic Management -->
+    <div class="arch-card">
+      <div class="arch-card-body">
+        <div class="arch-card-text">
+          <h3><span class="card-number">6</span>Memory &amp; Topic Management</h3>
+          <p>
+            The in-memory SessionStore manages conversation history and topic tracking for multi-turn chat sessions.
+            Each session maintains a list of user/assistant message pairs and a dynamically extracted topic string
+            that captures the clinical context of the conversation.
+          </p>
+          <p>
+            <span class="key-label">Topic extraction</span> works by analyzing the chunks that were actually cited in the response:
+            it identifies the most common cancer_type and up to 2 clinical terms (section numbers are excluded to avoid search noise).
+            Topics are only updated when the guardrail result is "sufficient" or "weak" and valid citations exist,
+            ensuring the topic reflects genuinely relevant content. The topic is then used by the QueryBuilder's
+            <span class="key-label">Tier C (topic_enriched)</span> strategy to enrich follow-up queries
+            (e.g., if topic is "lung hemoptysis" and user asks "what about under 40?",
+            the search query becomes "lung hemoptysis what about under 40?").
+          </p>
+          <ul>
+            <li><span class="key-label">History:</span> append(session_id, role, content) / get_history(session_id) / clear_session(session_id)</li>
+            <li><span class="key-label">Topic:</span> update_topic(session_id, chunks) / get_topic(session_id)</li>
+            <li>Topic format: space-separated keywords like "lung hemoptysis dysphagia"</li>
+            <li>Update rule: only from cited chunks when guardrail_result is sufficient/weak</li>
+          </ul>
+        </div>
+        <div class="arch-thumb" onclick="openLightbox('image/06_memory_topic.png', 'Memory & Topic Management')">
+          <img src="image/06_memory_topic.png" alt="Memory & Topic Management" loading="lazy" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. Query Builder Strategy -->
+    <div class="arch-card">
+      <div class="arch-card-body">
+        <div class="arch-card-text">
+          <h3><span class="card-number">7</span>Query Builder Strategy (A+C+B Tiers)</h3>
+          <p>
+            The QueryBuilder uses a tiered fallback strategy to construct optimal search queries for the RAG pipeline.
+            It first detects whether the user's message is a follow-up question, then selects the appropriate query construction approach.
+          </p>
+          <p>
+            <span class="key-label">Follow-up detection</span> uses three heuristics: very short messages (&le;3 words),
+            messages starting with known phrases ("what about", "how about", "and if", "what if"),
+            and short messages (&lt;8 words) containing context pronouns (it, that, they, this, them).
+            For standalone questions, <span class="key-label">Tier A (direct)</span> passes the raw message as the search query.
+            For follow-ups with an existing session topic, <span class="key-label">Tier C (topic_enriched)</span> prepends the topic to provide context.
+            If no topic exists, <span class="key-label">Tier B (llm_rewrite)</span> uses Gemini to rewrite the follow-up into
+            a standalone search query using conversation history (max 6 turns). If Gemini is unavailable, it falls back to Tier A.
+          </p>
+          <ul>
+            <li><span class="key-label">Tier A:</span> Direct &mdash; raw message as query (standalone questions)</li>
+            <li><span class="key-label">Tier C:</span> Topic Enriched &mdash; "{topic} {message}" (follow-ups with topic)</li>
+            <li><span class="key-label">Tier B:</span> LLM Rewrite &mdash; Gemini rewrites to standalone query (follow-ups without topic)</li>
+            <li>Follow-up markers: short length, starter phrases, context pronouns</li>
+          </ul>
+        </div>
+        <div class="arch-thumb" onclick="openLightbox('image/07_query_builder.png', 'Query Builder Strategy (A+C+B Tiers)')">
+          <img src="image/07_query_builder.png" alt="Query Builder Strategy" loading="lazy" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. Query Rewriting -->
+    <div class="arch-card">
+      <div class="arch-card-body">
+        <div class="arch-card-text">
+          <h3><span class="card-number">8</span>Query Rewriting / Summarization</h3>
+          <p>
+            When a follow-up question cannot be enriched with a session topic (Tier B fallback),
+            the system uses Gemini 2.0 Flash to rewrite the ambiguous follow-up into a standalone search query
+            using the conversation history as context.
+          </p>
+          <p>
+            The REWRITE_PROMPT instructs Gemini to produce a query under 20 words while keeping medical terms exact.
+            For example, given a history discussing lung cancer referral criteria and a follow-up "and under 40?",
+            the LLM produces: "lung cancer urgent referral criteria for patients under 40 years old".
+            This rewriting is also triggered as a <span class="key-label">retry mechanism</span> in the guardrail_check node:
+            if the initial retrieval returns no relevant chunks (result='none') and the current strategy isn't already 'llm_rewrite',
+            the system rewrites the query and retries retrieval once before giving up.
+          </p>
+          <ul>
+            <li><span class="key-label">Used in:</span> QueryBuilder Tier B (build_query_node) and guardrail_check retry</li>
+            <li><span class="key-label">Input:</span> conversation history (max 6 turns) + current message</li>
+            <li><span class="key-label">Output:</span> standalone search query under 20 words</li>
+            <li>Medical terms preserved exactly as written (no paraphrasing clinical terminology)</li>
+          </ul>
+        </div>
+        <div class="arch-thumb" onclick="openLightbox('image/08_query_rewrite.png', 'Query Rewriting / Summarization')">
+          <img src="image/08_query_rewrite.png" alt="Query Rewriting" loading="lazy" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 9. Input/Output Guardrails -->
+    <div class="arch-card">
+      <div class="arch-card-body">
+        <div class="arch-card-text">
+          <h3><span class="card-number">9</span>Input / Output Guardrails</h3>
+          <p>
+            A dual-layer guardrail system that prevents hallucination and keeps responses within NG12 scope.
+            The <span class="key-label">input guardrail</span> (classify_input) uses regex/keyword matching (no LLM call)
+            to classify messages into four categories: smalltalk, meta, medical_out_of_scope, or proceed.
+          </p>
+          <p>
+            The <span class="key-label">output guardrail</span> (_assess_chunk_quality) analyzes retrieved chunk scores to determine evidence quality.
+            If all scores &lt; 0.25, it returns "none". It counts good_chunks (score &gt; 0.4):
+            zero good chunks with best &lt; 0.35 yields "none"; with best &ge; 0.35 yields "weak";
+            &le;2 good chunks with best &lt; 0.5 yields "weak"; otherwise "sufficient".
+            A post-retrieval out-of-scope check compares the query against treatment/prognosis keywords
+            (with override if referral/symptom keywords are also present). Each guardrail result maps to a dedicated response path
+            with appropriate templates: full answer (sufficient), hedged answer (weak), refusal (none), or scope message (out_of_scope).
+          </p>
+          <ul>
+            <li><span class="key-label">Input categories:</span> smalltalk, meta, medical_out_of_scope, proceed</li>
+            <li><span class="key-label">Output thresholds:</span> none (&lt;0.25 or no good chunks), weak (borderline), sufficient (strong evidence)</li>
+            <li><span class="key-label">5 response paths:</span> generate, qualify, refuse, out_of_scope, smalltalk_meta</li>
+            <li>Medical OOS override: if message also contains referral/criteria/symptom keywords &rarr; proceed anyway</li>
+          </ul>
+        </div>
+        <div class="arch-thumb" onclick="openLightbox('image/09_guardrails.png', 'Input / Output Guardrails')">
+          <img src="image/09_guardrails.png" alt="Guardrails" loading="lazy" />
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+    <div class="lightbox-header" onclick="event.stopPropagation()">
+      <span class="lightbox-title" id="lightbox-title"></span>
+      <div class="lightbox-controls">
+        <button onclick="zoomOut()" title="Zoom Out">&minus;</button>
+        <span class="zoom-level" id="zoom-level">100%</span>
+        <button onclick="zoomIn()" title="Zoom In">&plus;</button>
+        <button onclick="zoomReset()" title="Fit to Screen">&#8634;</button>
+        <button onclick="closeLightbox()" title="Close" style="background:rgba(220,38,38,0.6);">&times;</button>
+      </div>
+    </div>
+    <div class="lightbox-img-container" id="lightbox-container" onclick="event.stopPropagation()">
+      <img id="lightbox-img" src="" alt="" draggable="false" />
+    </div>
+  </div>
+
+  <script>
+    let currentZoom = 1;
+    let panX = 0, panY = 0;
+    let isDragging = false;
+    let dragStartX = 0, dragStartY = 0;
+    const ZOOM_STEP = 0.25;
+    const ZOOM_MIN = 0.25;
+    const ZOOM_MAX = 4;
+    const container = document.getElementById('lightbox-container');
+
+    function resetPan() { panX = 0; panY = 0; }
+
+    function openLightbox(src, title) {
+      const lightbox = document.getElementById('lightbox');
+      const img = document.getElementById('lightbox-img');
+      document.getElementById('lightbox-title').textContent = title;
+      img.src = src;
+      currentZoom = 1;
+      resetPan();
+      container.classList.add('smooth');
+      updateTransform();
+      lightbox.classList.add('open');
+      document.body.style.overflow = 'hidden';
+
+      img.onload = function() {
+        const cw = container.clientWidth - 40;
+        const ch = container.clientHeight - 40;
+        if (img.naturalWidth > cw || img.naturalHeight > ch) {
+          currentZoom = Math.min(cw / img.naturalWidth, ch / img.naturalHeight);
+        } else {
+          currentZoom = 1;
+        }
+        resetPan();
+        updateTransform();
+      };
+    }
+
+    function closeLightbox(event) {
+      if (event && event.target !== document.getElementById('lightbox')) return;
+      document.getElementById('lightbox').classList.remove('open');
+      document.body.style.overflow = '';
+      if (!event) {
+        document.getElementById('lightbox').classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    }
+
+    function zoomIn()  { currentZoom = Math.min(ZOOM_MAX, currentZoom + ZOOM_STEP); container.classList.add('smooth'); updateTransform(); }
+    function zoomOut() { currentZoom = Math.max(ZOOM_MIN, currentZoom - ZOOM_STEP); container.classList.add('smooth'); updateTransform(); }
+
+    function zoomReset() {
+      const img = document.getElementById('lightbox-img');
+      const cw = container.clientWidth - 40;
+      const ch = container.clientHeight - 40;
+      if (img.naturalWidth && img.naturalHeight) {
+        currentZoom = Math.min(cw / img.naturalWidth, ch / img.naturalHeight, 1);
+      } else {
+        currentZoom = 1;
+      }
+      resetPan();
+      container.classList.add('smooth');
+      updateTransform();
+    }
+
+    function updateTransform() {
+      const img = document.getElementById('lightbox-img');
+      img.style.transform = 'translate(' + panX + 'px,' + panY + 'px) scale(' + currentZoom + ')';
+      document.getElementById('zoom-level').textContent = Math.round(currentZoom * 100) + '%';
+    }
+
+    // --- Drag to pan ---
+    container.addEventListener('mousedown', function(e) {
+      if (e.button !== 0) return;
+      isDragging = true;
+      dragStartX = e.clientX - panX;
+      dragStartY = e.clientY - panY;
+      container.classList.remove('smooth');
+      container.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', function(e) {
+      if (!isDragging) return;
+      panX = e.clientX - dragStartX;
+      panY = e.clientY - dragStartY;
+      updateTransform();
+    });
+
+    document.addEventListener('mouseup', function() {
+      if (!isDragging) return;
+      isDragging = false;
+      container.style.cursor = '';
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      const lightbox = document.getElementById('lightbox');
+      if (!lightbox.classList.contains('open')) return;
+
+      if (e.key === 'Escape') {
+        lightbox.classList.remove('open');
+        document.body.style.overflow = '';
+      } else if (e.key === '+' || e.key === '=') {
+        zoomIn();
+      } else if (e.key === '-') {
+        zoomOut();
+      } else if (e.key === '0') {
+        zoomReset();
+      }
+    });
+
+    // Mouse wheel zoom
+    container.addEventListener('wheel', function(e) {
+      e.preventDefault();
+      container.classList.add('smooth');
+      if (e.deltaY < 0) { zoomIn(); } else { zoomOut(); }
+    }, { passive: false });
+  </script>
+</body>
+</html>

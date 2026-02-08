@@ -1,0 +1,12 @@
+[
+  {"patient_id": "PT-101", "name": "John Doe", "age": 55, "gender": "Male", "smoking_history": "Current Smoker", "symptoms": ["unexplained hemoptysis", "fatigue"], "symptom_duration_days": 14},
+  {"patient_id": "PT-102", "name": "Jane Smith", "age": 25, "gender": "Female", "smoking_history": "Never Smoked", "symptoms": ["persistent cough", "sore throat"], "symptom_duration_days": 5},
+  {"patient_id": "PT-103", "name": "Robert Brown", "age": 45, "gender": "Male", "smoking_history": "Ex-Smoker", "symptoms": ["persistent cough", "shortness of breath"], "symptom_duration_days": 28},
+  {"patient_id": "PT-104", "name": "Sarah Connor", "age": 35, "gender": "Female", "smoking_history": "Never Smoked", "symptoms": ["dysphagia"], "symptom_duration_days": 21},
+  {"patient_id": "PT-105", "name": "Michael Chang", "age": 65, "gender": "Male", "smoking_history": "Ex-Smoker", "symptoms": ["iron-deficiency anaemia", "fatigue"], "symptom_duration_days": 60},
+  {"patient_id": "PT-106", "name": "Emily Blunt", "age": 18, "gender": "Female", "smoking_history": "Never Smoked", "symptoms": ["fatigue"], "symptom_duration_days": 30},
+  {"patient_id": "PT-107", "name": "David Bowie", "age": 48, "gender": "Male", "smoking_history": "Current Smoker", "symptoms": ["persistent hoarseness"], "symptom_duration_days": 45},
+  {"patient_id": "PT-108", "name": "Alice Wonderland", "age": 32, "gender": "Female", "smoking_history": "Never Smoked", "symptoms": ["unexplained breast lump"], "symptom_duration_days": 10},
+  {"patient_id": "PT-109", "name": "Tom Cruise", "age": 45, "gender": "Male", "smoking_history": "Never Smoked", "symptoms": ["dyspepsia"], "symptom_duration_days": 7},
+  {"patient_id": "PT-110", "name": "Bruce Wayne", "age": 60, "gender": "Male", "smoking_history": "Never Smoked", "symptoms": ["visible haematuria"], "symptom_duration_days": 2}
+]

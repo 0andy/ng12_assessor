@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+google-cloud-aiplatform
+chromadb
+langchain
+langchain-google-vertexai
+langgraph
+pymupdf
+python-dotenv
+pydantic-settings
+langchain-text-splitters

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NG12 - Notes</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f4f5f7; color: #1a1a1a; min-height: 100vh; }
+    header { background: linear-gradient(135deg, #1e40af, #2563eb); color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 56px; }
+    header h1 { font-size: 18px; font-weight: 600; }
+    .header-links { display: flex; gap: 10px; }
+    .header-links a { color: #fff; font-size: 13px; font-weight: 500; text-decoration: none; padding: 6px 16px; border: 1px solid rgba(255,255,255,0.4); border-radius: 6px; transition: all .15s; }
+    .header-links a:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.7); }
+
+    .content { max-width: 900px; margin: 0 auto; padding: 32px 24px 48px; }
+    .content h2 { font-size: 28px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
+    .content .subtitle { font-size: 15px; color: #64748b; margin-bottom: 28px; }
+
+    .section { margin-bottom: 28px; }
+    .section h3 { font-size: 17px; font-weight: 600; color: #1e293b; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
+    .section p { font-size: 14px; line-height: 1.7; color: #475569; margin-bottom: 10px; }
+
+    .note-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 20px; margin-bottom: 12px; }
+    .note-card h4 { font-size: 14px; font-weight: 600; color: #1e40af; margin-bottom: 6px; }
+    .note-card p { font-size: 13px; line-height: 1.7; color: #475569; margin-bottom: 0; }
+    .note-card ul { font-size: 13px; line-height: 1.7; color: #475569; margin: 4px 0 0 18px; }
+    .note-card li { margin-bottom: 3px; }
+
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; margin-right: 4px; }
+    .tag-assumption { background: #fef3c7; color: #92400e; }
+    .tag-improvement { background: #dbeafe; color: #1e40af; }
+    .tag-tradeoff { background: #fce7f3; color: #9d174d; }
+
+    @media (max-width: 640px) {
+      .content { padding: 20px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>NG12 Assessor - Notes</h1>
+    <div class="header-links">
+      <a href="index.html">&larr; Back to App</a>
+      <a href="readme.html" target="_blank">Readme</a>
+      <a href="architecture.html" target="_blank">Architecture</a>
+      <a href="gallery.html" target="_blank">Gallery</a>
+    </div>
+  </header>
+
+  <div class="content">
+    <h2>Notes</h2>
+    <p class="subtitle">Assumptions, trade-offs, and future improvements</p>
+
+    <!-- PDF Ingestion & Chunking -->
+    <div class="section">
+      <h3>PDF Ingestion &amp; Chunking</h3>
+      <div class="note-card">
+        <h4><span class="tag tag-assumption">Limitation</span> Chunk boundaries</h4>
+        <p>PDF parsing and chunk boundaries are not always perfectly aligned with clinical structure (e.g. criteria vs rationale vs action). Table extraction from the symptom index can be lossy, especially for age and duration thresholds.</p>
+      </div>
+      <div class="note-card">
+        <h4><span class="tag tag-improvement">Improvement</span> Structure-aware ingestion</h4>
+        <p>With more time, ingestion would be made more structure-aware and metadata-driven.</p>
+      </div>
+    </div>
+
+    <!-- RAG Retrieval -->
+    <div class="section">
+      <h3>RAG Retrieval Limitations</h3>
+      <div class="note-card">
+        <h4><span class="tag tag-tradeoff">Trade-off</span> Flat retrieval &amp; cross-references</h4>
+        <p>Current retrieval is flat &mdash; it does not follow cross-references between chunks (e.g. "see section on&hellip;").</p>
+      </div>
+      <div class="note-card">
+        <h4><span class="tag tag-improvement">Improvement</span> Soft reference expansion</h4>
+        <ul>
+          <li>During indexing, detect phrases like "see section on&hellip;", "see recommendation&hellip;"</li>
+          <li>Store referenced chunk IDs in chunk metadata</li>
+          <li>At retrieval time, automatically include referenced chunks alongside the primary result</li>
+        </ul>
+      </div>
+      <div class="note-card">
+        <h4><span class="tag tag-improvement">Improvement</span> Deep cross-referencing</h4>
+        <ul>
+          <li>GraphRAG and Elasticsearch / hybrid search</li>
+          <li>Multi-step / agentic RAG to validate thresholds and exceptions</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Embedding Gap -->
+    <div class="section">
+      <h3>Embedding Gap</h3>
+      <div class="note-card">
+        <h4><span class="tag tag-tradeoff">Trade-off</span> Lay language vs clinical terminology</h4>
+        <p>User queries may use non-clinical language that does not match guideline terminology, reducing retrieval accuracy.</p>
+      </div>
+    </div>
+
+    <!-- Memory -->
+    <div class="section">
+      <h3>Memory &amp; Multi-turn Coherence</h3>
+      <div class="note-card">
+        <h4><span class="tag tag-tradeoff">Trade-off</span> Multi-turn coherence limitations</h4>
+        <p>Topic tracking, follow-up detection, and summary extraction across multi-turn conversations have room for improvement. Topic drift, history contamination, and ambiguous follow-up messages remain challenging areas.</p>
+      </div>
+      <div class="note-card">
+        <h4><span class="tag tag-improvement">Improvement</span> Separate memory layers</h4>
+        <ul>
+          <li><strong>Global-level memory:</strong> symptom-focused memory for better multi-turn reasoning &mdash; track the full clinical picture (all symptoms, age, risk factors) as structured state rather than relying on LLM extraction each turn</li>
+          <li><strong>User-level memory:</strong> per-user context and preferences, persistent across sessions</li>
+          <li><strong>Topic-aware reranking:</strong> use the session topic to rerank retrieved chunks, not just prepend to queries, reducing drift when strong off-topic keywords appear in follow-ups</li>
+          <li><strong>Structured clinical state:</strong> replace free-text summary extraction with a structured state object (age, sex, symptoms list, durations) that updates incrementally per turn rather than re-extracting from full history each time</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Guardrails -->
+    <div class="section">
+      <h3>Guardrails</h3>
+      <div class="note-card">
+        <h4><span class="tag tag-assumption">Assumption</span> Input guardrail coverage</h4>
+        <p>Input classification uses deterministic regex/keyword matching (no LLM). Fast and predictable, but cannot catch nuanced edge cases.</p>
+      </div>
+      <div class="note-card">
+        <h4><span class="tag tag-improvement">Improvement</span> Output guardrails</h4>
+        <p>Currently limited to citation validation and qualified response tiers. A dedicated output guardrail pass would better catch hallucinated recommendations and unsupported clinical claims.</p>
+      </div>
+    </div>
+
+    <!-- Guideline Document Control -->
+    <div class="section">
+      <h3>Guideline Document Control</h3>
+      <div class="note-card">
+        <h4><span class="tag tag-improvement">Improvement</span> Source &amp; version tracking</h4>
+        <p>Track document source, version history, and update status to ensure the system always reflects the latest published guidelines.</p>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

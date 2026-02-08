@@ -35,9 +35,11 @@ python -m uvicorn app.main:app --port 8000
 
 Then open <http://localhost:8000>
 
-### 3. Build the Vector Database
+### 3. Vector Database
 
-On first run, you need to index the NG12 PDF into ChromaDB. Go to the **Vector DB Admin** tab on the main page and click the **"Re-index PDF"** button. This will parse the PDF and populate the vector store — it only needs to be done once.
+On first startup, the system automatically detects whether the ChromaDB vector store exists and builds it from the NG12 PDF if needed. No manual action is required.
+
+To re-index manually, go to the **Vector DB Admin** tab and click **"Re-index PDF"**.
 
 ## Prompt Files
 

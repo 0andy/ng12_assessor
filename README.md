@@ -2,6 +2,8 @@
 
 A clinical decision support system that uses RAG to assess cancer risk based on NICE NG12 guidelines.
 
+Live demo: <https://ng12assessor.fanai.dev/>
+
 ## Quick Start
 
 ### 1. Add your Google Cloud credentials
@@ -40,6 +42,10 @@ Then open <http://localhost:8000>
 On first startup, the system automatically detects whether the ChromaDB vector store exists and builds it from the NG12 PDF if needed. No manual action is required.
 
 To re-index manually, go to the **Vector DB Admin** tab and click **"Re-index PDF"**.
+
+## Design Note
+
+The patient assessment workflow and the chat interface share the same RAG retrieval and reasoning logic directly, rather than exposing it through a separate shared API endpoint. This keeps the core behavior easy to inspect and debug. In a production setting, this would likely be factored into a dedicated internal service.
 
 ## Prompt Files
 

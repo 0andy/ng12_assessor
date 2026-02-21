@@ -4,6 +4,10 @@ A clinical decision support system that uses RAG to assess cancer risk based on 
 
 Live demo: <https://ng12assessor.fanai.dev/>
 
+## Demo
+
+<video src="https://github.com/0andy/ng12_assessor/raw/main/static/video/clinictest.webm" controls width="100%"></video>
+
 ## Quick Start
 
 ### 1. Add your Google Cloud credentials

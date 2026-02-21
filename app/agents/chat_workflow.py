@@ -707,9 +707,9 @@ async def qualify_node(state: ChatState) -> dict:
     message = state["message"]
 
     partial_answer = await _generate_answer(message, chunks, history)
+    citations = build_citations_from_chunks(chunks, partial_answer)
     partial_answer = clean_answer_sources(partial_answer, chunks)
     answer = CHAT_QUALIFY_TEMPLATE.format(partial_answer=partial_answer)
-    citations = build_citations_from_chunks(chunks, partial_answer)
 
     # Prepend query summary for display — only for clinical paths
     guardrail = state.get("guardrail_result")
